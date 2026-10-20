@@ -57,8 +57,13 @@ pub fn write_project(path: &Path, contents: &str) -> Result<(), String> {
 }
 
 /// Renders and writes an export with the native core.
-pub fn export_to(path: &Path, project: &Project, format: Format) -> Result<(), String> {
-    let file = pf_core::export(project, format).map_err(|e| e.to_string())?;
+pub fn export_to(
+    path: &Path,
+    project: &Project,
+    format: Format,
+    options: &pf_core::ExportOptions,
+) -> Result<(), String> {
+    let file = pf_core::export_with(project, format, options).map_err(|e| e.to_string())?;
     write_atomic(path, &file.bytes)
 }
 
@@ -160,8 +165,15 @@ mod tests {
         let dir = tempfile::tempdir().expect("tempdir");
         let path = dir.path().join("box.dxf");
         let project: Project = serde_json::from_str(PROJECT).expect("project");
-        export_to(&path, &project, Format::Dxf).expect("export");
+        export_to(&path, &project, Format::Dxf, &Default::default()).expect("export");
         assert!(fs::read_to_string(&path).expect("read").ends_with("EOF\n"));
+        let pdf = dir.path().join("box.pdf");
+        let opts = pf_core::ExportOptions {
+            page: Some("a4".into()),
+            ..Default::default()
+        };
+        export_to(&pdf, &project, Format::Pdf, &opts).expect("pdf");
+        assert!(fs::read(&pdf).expect("read").starts_with(b"%PDF-1.4"));
     }
 
     #[test]

@@ -32,6 +32,8 @@ class GeneratePackagingFiles implements ShouldQueue
         try {
             $dxf = $design->dxf();
             $svg = $design->svg();
+            // 1:1 PDF proof for the customer's approval, stamped so it is not used as artwork.
+            $pdf = $design->pdf(['watermark' => 'Proof - not for production']);
         } catch (RateLimitedException $e) {
             $this->release($e->retryAfter);
 
@@ -48,6 +50,7 @@ class GeneratePackagingFiles implements ShouldQueue
             'status' => 'ready',
             'dxf_path' => $dxf->store("{$dir}/{$dxf->filename}"),
             'svg_path' => $svg->store("{$dir}/{$svg->filename}"),
+            'pdf_path' => $pdf->store("{$dir}/{$pdf->filename}"),
             'error' => null,
         ]);
     }

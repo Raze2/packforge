@@ -1,9 +1,17 @@
 //! Export writers. Every writer is deterministic: same die-line ⇒ identical bytes.
 
+mod cf2;
 mod dxf;
+mod hpgl;
+mod pdf;
+mod profile;
 mod svg;
 
+pub use cf2::to_cf2;
 pub use dxf::{to_dxf, DxfOptions};
+pub use hpgl::to_hpgl;
+pub use pdf::{to_pdf, PageSize, PdfOptions};
+pub use profile::{LineMap, Profile};
 pub use svg::{to_svg, SvgOptions};
 
 use serde::{Deserialize, Serialize};
@@ -13,6 +21,12 @@ use serde::{Deserialize, Serialize};
 pub enum Format {
     Svg,
     Dxf,
+    Pdf,
+    Cf2,
+    /// HPGL plot file (.plt).
+    Hpgl,
+    /// Binary glTF of the erected box (written by pf-fold3d).
+    Glb,
 }
 
 impl Format {
@@ -20,6 +34,10 @@ impl Format {
         match s.to_ascii_lowercase().as_str() {
             "svg" => Some(Format::Svg),
             "dxf" => Some(Format::Dxf),
+            "pdf" => Some(Format::Pdf),
+            "cf2" => Some(Format::Cf2),
+            "hpgl" | "plt" => Some(Format::Hpgl),
+            "glb" => Some(Format::Glb),
             _ => None,
         }
     }
@@ -28,6 +46,10 @@ impl Format {
         match self {
             Format::Svg => "svg",
             Format::Dxf => "dxf",
+            Format::Pdf => "pdf",
+            Format::Cf2 => "cf2",
+            Format::Hpgl => "plt",
+            Format::Glb => "glb",
         }
     }
 
@@ -35,6 +57,10 @@ impl Format {
         match self {
             Format::Svg => "image/svg+xml",
             Format::Dxf => "application/dxf",
+            Format::Pdf => "application/pdf",
+            Format::Cf2 => "application/vnd.cf2",
+            Format::Hpgl => "application/vnd.hp-hpgl",
+            Format::Glb => "model/gltf-binary",
         }
     }
 }

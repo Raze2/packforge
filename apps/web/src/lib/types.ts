@@ -153,4 +153,65 @@ export interface Project {
   units: Units;
 }
 
-export type ExportFormat = 'svg' | 'dxf';
+export type ExportFormat = 'pdf' | 'dxf' | 'cf2' | 'hpgl' | 'svg' | 'glb';
+
+export interface Nesting {
+  sheet_width: number;
+  sheet_height: number;
+  gap?: number;
+  margin?: number;
+  allow_rotation?: boolean;
+  max_count?: number | null;
+}
+
+/** Production options for an export (all optional). */
+export interface ExportOptions {
+  rotate?: 0 | 90 | 180 | 270;
+  mirror?: boolean;
+  nesting?: Nesting | null;
+  page?: 'actual' | 'a4' | 'a3' | 'letter' | null;
+  watermark?: string | null;
+  profile?: 'standard' | 'cut-crease' | null;
+}
+
+export interface NestSummary {
+  count: number;
+  cols: number;
+  rows: number;
+  rotated: boolean;
+  blank_width: number;
+  blank_height: number;
+  sheet_area_m2: number;
+  utilisation: number;
+}
+
+export const FORMAT_INFO: Record<ExportFormat, { ext: string; mime: string }> = {
+  pdf: { ext: 'pdf', mime: 'application/pdf' },
+  dxf: { ext: 'dxf', mime: 'application/dxf' },
+  cf2: { ext: 'cf2', mime: 'application/vnd.cf2' },
+  hpgl: { ext: 'plt', mime: 'application/vnd.hp-hpgl' },
+  svg: { ext: 'svg', mime: 'image/svg+xml' },
+  glb: { ext: 'glb', mime: 'model/gltf-binary' },
+};
+
+export interface Vec3 {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface Panel3 {
+  id: string;
+  corners: [Vec3, Vec3, Vec3, Vec3];
+  normal: Vec3;
+  depth: number;
+}
+
+/** A design folded to some progress (0 = flat, 1 = erected). Millimetres. */
+export interface Folded {
+  progress: number;
+  root: string;
+  panels: Panel3[];
+  min: Vec3;
+  max: Vec3;
+}

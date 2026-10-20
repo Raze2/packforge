@@ -8,7 +8,7 @@ class Order extends Model
 {
     protected $fillable = [
         'customer_name', 'customer_email', 'quantity', 'project', 'stats',
-        'status', 'dxf_path', 'svg_path', 'error',
+        'status', 'dxf_path', 'svg_path', 'pdf_path', 'error',
     ];
 
     protected function casts(): array

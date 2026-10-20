@@ -73,6 +73,7 @@ class OrderController extends Controller
         $path = match ($format) {
             'dxf' => $order->dxf_path,
             'svg' => $order->svg_path,
+            'pdf' => $order->pdf_path,
             default => null,
         };
         abort_unless($path && Storage::exists($path), 404);

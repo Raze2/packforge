@@ -12,6 +12,8 @@ pf-geom.workspace = true
 pf-model.workspace = true
 pf-component.workspace = true
 pf-export.workspace = true
+pf-fold3d.workspace = true
+pf-optimize.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 

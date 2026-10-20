@@ -74,6 +74,46 @@ class ClientTest extends TestCase
         Http::assertSent(fn (Request $r) => $r['format'] === 'dxf' && $r->hasHeader('Accept', '*/*'));
     }
 
+    public function test_production_exports_send_options(): void
+    {
+        Http::fake(['*/export' => Http::response('%PDF-1.4', 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="fefco-0201.pdf"',
+        ])]);
+
+        $file = PackForge::component('fefco-0201')->pdf([
+            'page' => 'a4',
+            'rotate' => 90,
+            'nesting' => ['sheet_width' => 2400, 'sheet_height' => 1600],
+        ]);
+
+        $this->assertSame('fefco-0201.pdf', $file->filename);
+        Http::assertSent(fn (Request $r) => $r['format'] === 'pdf'
+            && $r['options']['page'] === 'a4'
+            && $r['options']['nesting']['sheet_width'] === 2400);
+    }
+
+    public function test_plain_exports_do_not_send_empty_options(): void
+    {
+        Http::fake(['*/export' => Http::response('$BOF', 200, ['Content-Type' => 'application/vnd.cf2'])]);
+
+        PackForge::component('fefco-0201')->cf2();
+
+        Http::assertSent(fn (Request $r) => $r['format'] === 'cf2' && ! isset($r['options']));
+    }
+
+    public function test_nest_and_fold(): void
+    {
+        Http::fake([
+            '*/nest' => Http::response(['count' => 8, 'cols' => 2, 'rows' => 4, 'rotated' => false, 'utilisation' => 0.77]),
+            '*/fold' => Http::response(['progress' => 1.0, 'panels' => []]),
+        ]);
+
+        $design = PackForge::component('fefco-0201');
+        $this->assertSame(8, $design->nest(['sheet_width' => 2400, 'sheet_height' => 1600])['count']);
+        $this->assertEquals(1, $design->fold()['progress']);
+    }
+
     public function test_invalid_params_raise_a_validation_exception(): void
     {
         Http::fake(['*' => Http::response([

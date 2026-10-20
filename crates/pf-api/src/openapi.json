@@ -2,11 +2,19 @@
   "openapi": "3.1.0",
   "info": {
     "title": "PackForge API",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Render and export parametric packaging designs. All lengths are millimetres. Responses are deterministic for the same input."
   },
-  "servers": [{ "url": "/" }],
-  "security": [{ "bearer": [] }],
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "security": [
+    {
+      "bearer": []
+    }
+  ],
   "paths": {
     "/v1/health": {
       "get": {
@@ -15,7 +23,13 @@
         "responses": {
           "200": {
             "description": "Server is up",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Health" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
           }
         }
       }
@@ -24,7 +38,11 @@
       "get": {
         "summary": "This document",
         "security": [],
-        "responses": { "200": { "description": "OpenAPI document" } }
+        "responses": {
+          "200": {
+            "description": "OpenAPI document"
+          }
+        }
       }
     },
     "/v1/components": {
@@ -35,25 +53,52 @@
             "description": "Catalogue",
             "content": {
               "application/json": {
-                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ComponentSummary" } }
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ComponentSummary"
+                  }
+                }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Problem" },
-          "429": { "$ref": "#/components/responses/Problem" }
+          "401": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem"
+          }
         }
       }
     },
     "/v1/components/{id}": {
       "get": {
         "summary": "Describe a component (parameter schema)",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "example": "fefco-0201" }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "fefco-0201"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Component with parameter definitions",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ComponentInfo" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComponentInfo"
+                }
+              }
+            }
           },
-          "404": { "$ref": "#/components/responses/Problem" }
+          "404": {
+            "$ref": "#/components/responses/Problem"
+          }
         }
       }
     },
@@ -64,7 +109,14 @@
           "200": {
             "description": "Board presets (nominal calipers)",
             "content": {
-              "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Board" } } }
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Board"
+                  }
+                }
+              }
             }
           }
         }
@@ -79,8 +131,14 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["project"],
-                "properties": { "project": { "$ref": "#/components/schemas/Project" } }
+                "required": [
+                  "project"
+                ],
+                "properties": {
+                  "project": {
+                    "$ref": "#/components/schemas/Project"
+                  }
+                }
               }
             }
           }
@@ -88,11 +146,23 @@
         "responses": {
           "200": {
             "description": "Render result",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RenderResult" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderResult"
+                }
+              }
+            }
           },
-          "400": { "$ref": "#/components/responses/Problem" },
-          "404": { "$ref": "#/components/responses/Problem" },
-          "422": { "$ref": "#/components/responses/Problem" }
+          "400": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem"
+          }
         }
       }
     },
@@ -100,7 +170,14 @@
       "post": {
         "summary": "Export a design as a file",
         "parameters": [
-          { "name": "If-None-Match", "in": "header", "schema": { "type": "string" }, "description": "ETag from a previous identical export" }
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "ETag from a previous identical export"
+          }
         ],
         "requestBody": {
           "required": true,
@@ -108,10 +185,28 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["project", "format"],
+                "required": [
+                  "project",
+                  "format"
+                ],
                 "properties": {
-                  "project": { "$ref": "#/components/schemas/Project" },
-                  "format": { "type": "string", "enum": ["svg", "dxf"] }
+                  "project": {
+                    "$ref": "#/components/schemas/Project"
+                  },
+                  "format": {
+                    "type": "string",
+                    "enum": [
+                      "svg",
+                      "dxf",
+                      "pdf",
+                      "cf2",
+                      "hpgl",
+                      "glb"
+                    ]
+                  },
+                  "options": {
+                    "$ref": "#/components/schemas/ExportOptions"
+                  }
                 }
               }
             }
@@ -120,116 +215,399 @@
         "responses": {
           "200": {
             "description": "File bytes; Content-Disposition carries the filename",
-            "headers": { "ETag": { "schema": { "type": "string" } } },
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
-              "image/svg+xml": { "schema": { "type": "string", "format": "binary" } },
-              "application/dxf": { "schema": { "type": "string", "format": "binary" } }
+              "image/svg+xml": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/dxf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/vnd.cf2": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/vnd.hp-hpgl": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "model/gltf-binary": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
             }
           },
-          "304": { "description": "Not modified" },
-          "400": { "$ref": "#/components/responses/Problem" },
-          "404": { "$ref": "#/components/responses/Problem" },
-          "422": { "$ref": "#/components/responses/Problem" }
+          "304": {
+            "description": "Not modified"
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "404": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/v1/nest": {
+      "post": {
+        "summary": "How many blanks fit on a sheet",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "project",
+                  "nesting"
+                ],
+                "properties": {
+                  "project": {
+                    "$ref": "#/components/schemas/Project"
+                  },
+                  "nesting": {
+                    "$ref": "#/components/schemas/Nesting"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Nesting summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NestSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/v1/fold": {
+      "post": {
+        "summary": "3D panel positions of the folded design",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "project"
+                ],
+                "properties": {
+                  "project": {
+                    "$ref": "#/components/schemas/Project"
+                  },
+                  "progress": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "default": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Panels with 3D corners (mm) and normals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
         }
       }
     }
   },
   "components": {
-    "securitySchemes": { "bearer": { "type": "http", "scheme": "bearer", "description": "API key, e.g. pk_live_…" } },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "API key, e.g. pk_live_\u2026"
+      }
+    },
     "responses": {
       "Problem": {
         "description": "Error (RFC 7807)",
-        "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/Problem" } } }
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
       }
     },
     "schemas": {
       "Health": {
         "type": "object",
-        "properties": { "status": { "type": "string" }, "version": { "type": "string" } }
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
       },
       "Problem": {
         "type": "object",
-        "required": ["type", "title", "status", "code"],
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code"
+        ],
         "properties": {
-          "type": { "type": "string" },
-          "title": { "type": "string" },
-          "status": { "type": "integer" },
-          "detail": { "type": "string" },
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "detail": {
+            "type": "string"
+          },
           "code": {
             "type": "string",
-            "enum": ["unauthorized", "rate_limited", "not_found", "invalid_request", "invalid_params", "unknown_component", "unknown_board", "unknown_format", "rule_violation", "geometry_error", "library_error"]
+            "enum": [
+              "unauthorized",
+              "rate_limited",
+              "not_found",
+              "invalid_request",
+              "invalid_params",
+              "unknown_component",
+              "unknown_board",
+              "unknown_format",
+              "rule_violation",
+              "geometry_error",
+              "library_error",
+              "export_error",
+              "fold_error"
+            ]
           },
           "errors": {
             "type": "array",
             "items": {
               "type": "object",
-              "properties": { "param": { "type": "string" }, "message": { "type": "string" } }
+              "properties": {
+                "param": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
             }
           }
         }
       },
       "Board": {
         "type": "object",
-        "required": ["id", "caliper_mm"],
+        "required": [
+          "id",
+          "caliper_mm"
+        ],
         "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
-          "caliper_mm": { "type": "number", "exclusiveMinimum": 0 },
-          "flute": { "type": "string" }
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "caliper_mm": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "flute": {
+            "type": "string"
+          }
         }
       },
       "Project": {
         "type": "object",
-        "required": ["component_id", "board"],
+        "required": [
+          "component_id",
+          "board"
+        ],
         "properties": {
-          "component_id": { "type": "string", "example": "fefco-0201" },
-          "component_version": { "type": "string" },
+          "component_id": {
+            "type": "string",
+            "example": "fefco-0201"
+          },
+          "component_version": {
+            "type": "string"
+          },
           "params": {
             "type": "object",
-            "additionalProperties": { "type": ["number", "string", "boolean"] },
-            "example": { "L": 300, "W": 200, "H": 150 }
+            "additionalProperties": {
+              "type": [
+                "number",
+                "string",
+                "boolean"
+              ]
+            },
+            "example": {
+              "L": 300,
+              "W": 200,
+              "H": 150
+            }
           },
           "board": {
             "oneOf": [
-              { "type": "string", "description": "Board preset id", "example": "C-flute" },
-              { "$ref": "#/components/schemas/Board" }
+              {
+                "type": "string",
+                "description": "Board preset id",
+                "example": "C-flute"
+              },
+              {
+                "$ref": "#/components/schemas/Board"
+              }
             ]
           },
-          "units": { "type": "string", "enum": ["mm", "cm", "in"], "default": "mm" }
+          "units": {
+            "type": "string",
+            "enum": [
+              "mm",
+              "cm",
+              "in"
+            ],
+            "default": "mm"
+          }
         }
       },
       "ComponentSummary": {
         "type": "object",
         "properties": {
-          "id": { "type": "string" },
-          "version": { "type": "string" },
-          "name": { "type": "string" },
-          "standard": { "type": ["string", "null"] },
-          "category": { "type": "string" },
-          "tier": { "type": "string", "enum": ["free", "premium"] }
+          "id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "standard": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "category": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "free",
+              "premium"
+            ]
+          }
         }
       },
       "ComponentInfo": {
         "allOf": [
-          { "$ref": "#/components/schemas/ComponentSummary" },
+          {
+            "$ref": "#/components/schemas/ComponentSummary"
+          },
           {
             "type": "object",
             "properties": {
-              "description": { "type": "string" },
-              "dimension_reference": { "type": "string" },
+              "description": {
+                "type": "string"
+              },
+              "dimension_reference": {
+                "type": "string"
+              },
               "params": {
                 "type": "array",
                 "items": {
                   "type": "object",
                   "properties": {
-                    "id": { "type": "string" },
-                    "label": { "type": "string" },
-                    "type": { "type": "string", "enum": ["length", "number", "angle", "bool", "enum"] },
-                    "default": { "type": ["number", "string", "boolean"] },
-                    "min": { "type": "number" },
-                    "max": { "type": "number" },
-                    "values": { "type": "array", "items": { "type": "string" } },
-                    "group": { "type": "string" }
+                    "id": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "length",
+                        "number",
+                        "angle",
+                        "bool",
+                        "enum"
+                      ]
+                    },
+                    "default": {
+                      "type": [
+                        "number",
+                        "string",
+                        "boolean"
+                      ]
+                    },
+                    "min": {
+                      "type": "number"
+                    },
+                    "max": {
+                      "type": "number"
+                    },
+                    "values": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "group": {
+                      "type": "string"
+                    }
                   }
                 }
               }
@@ -240,29 +618,178 @@
       "Stats": {
         "type": "object",
         "properties": {
-          "blank_width": { "type": "number" },
-          "blank_height": { "type": "number" },
-          "blank_area_m2": { "type": "number" },
-          "outline_area_m2": { "type": "number" },
-          "cut_length": { "type": "number" },
-          "crease_length": { "type": "number" }
+          "blank_width": {
+            "type": "number"
+          },
+          "blank_height": {
+            "type": "number"
+          },
+          "blank_area_m2": {
+            "type": "number"
+          },
+          "outline_area_m2": {
+            "type": "number"
+          },
+          "cut_length": {
+            "type": "number"
+          },
+          "crease_length": {
+            "type": "number"
+          }
         }
       },
       "RenderResult": {
         "type": "object",
         "properties": {
-          "component_id": { "type": "string" },
-          "component_version": { "type": "string" },
-          "board": { "$ref": "#/components/schemas/Board" },
-          "dieline": { "type": "object", "description": "Entities with line_type and path segments (mm, y up)" },
-          "fold": { "type": "object", "description": "Panels and hinges for 3D folding" },
-          "stats": { "$ref": "#/components/schemas/Stats" },
+          "component_id": {
+            "type": "string"
+          },
+          "component_version": {
+            "type": "string"
+          },
+          "board": {
+            "$ref": "#/components/schemas/Board"
+          },
+          "dieline": {
+            "type": "object",
+            "description": "Entities with line_type and path segments (mm, y up)"
+          },
+          "fold": {
+            "type": "object",
+            "description": "Panels and hinges for 3D folding"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/Stats"
+          },
           "diagnostics": {
             "type": "array",
             "items": {
               "type": "object",
-              "properties": { "severity": { "type": "string", "enum": ["info", "warning", "error"] }, "message": { "type": "string" } }
+              "properties": {
+                "severity": {
+                  "type": "string",
+                  "enum": [
+                    "info",
+                    "warning",
+                    "error"
+                  ]
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
             }
+          }
+        }
+      },
+      "Nesting": {
+        "type": "object",
+        "required": [
+          "sheet_width",
+          "sheet_height"
+        ],
+        "properties": {
+          "sheet_width": {
+            "type": "number"
+          },
+          "sheet_height": {
+            "type": "number"
+          },
+          "gap": {
+            "type": "number",
+            "default": 8
+          },
+          "margin": {
+            "type": "number",
+            "default": 10
+          },
+          "allow_rotation": {
+            "type": "boolean",
+            "default": true
+          },
+          "max_count": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        }
+      },
+      "ExportOptions": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "rotate": {
+            "type": "integer",
+            "enum": [
+              0,
+              90,
+              180,
+              270
+            ],
+            "default": 0
+          },
+          "mirror": {
+            "type": "boolean",
+            "default": false
+          },
+          "nesting": {
+            "$ref": "#/components/schemas/Nesting"
+          },
+          "page": {
+            "type": "string",
+            "enum": [
+              "actual",
+              "a4",
+              "a3",
+              "letter"
+            ],
+            "description": "PDF only; default actual (1:1)"
+          },
+          "watermark": {
+            "type": "string",
+            "description": "PDF only"
+          },
+          "profile": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "cut-crease"
+            ],
+            "description": "Line-type mapping for DXF layers, CF2 types and HPGL pens"
+          },
+          "custom_profile": {
+            "type": "object",
+            "description": "Full output profile (id, name, lines: {cut: {layer, cf2_type, cf2_pointage, pen, include}, ...})"
+          }
+        }
+      },
+      "NestSummary": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "cols": {
+            "type": "integer"
+          },
+          "rows": {
+            "type": "integer"
+          },
+          "rotated": {
+            "type": "boolean"
+          },
+          "blank_width": {
+            "type": "number"
+          },
+          "blank_height": {
+            "type": "number"
+          },
+          "sheet_area_m2": {
+            "type": "number"
+          },
+          "utilisation": {
+            "type": "number"
           }
         }
       }

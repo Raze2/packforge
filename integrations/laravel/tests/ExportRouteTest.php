@@ -28,6 +28,36 @@ class ExportRouteTest extends TestCase
         Http::assertSent(fn ($r) => $r->hasHeader('Authorization', 'Bearer pk_test_123'));
     }
 
+    public function test_route_forwards_options_but_never_a_browser_watermark(): void
+    {
+        config(['packforge.export_route.watermark' => 'Proof']);
+        Http::fake(['*/export' => Http::response('%PDF-1.4', 200, ['Content-Type' => 'application/pdf'])]);
+
+        $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
+            ->postJson('/packforge/export', [
+                'project' => $this->project(),
+                'format' => 'pdf',
+                'options' => ['page' => 'a4', 'rotate' => 90, 'watermark' => 'hacked'],
+            ])
+            ->assertOk();
+
+        Http::assertSent(fn ($r) => $r['options']['page'] === 'a4'
+            && $r['options']['rotate'] === 90
+            && $r['options']['watermark'] === 'Proof');
+    }
+
+    public function test_route_rejects_bad_options(): void
+    {
+        Http::fake();
+
+        $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)
+            ->postJson('/packforge/export', ['project' => $this->project(), 'format' => 'dxf', 'options' => ['rotate' => 45]])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['options.rotate']);
+
+        Http::assertNothingSent();
+    }
+
     public function test_route_validates_input(): void
     {
         Http::fake();

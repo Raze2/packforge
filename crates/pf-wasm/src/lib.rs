@@ -54,11 +54,36 @@ pub fn render(project_json: &str) -> Result<String, JsValue> {
     to_json(&pf_core::render(&p).map_err(core_err)?)
 }
 
-/// Project JSON + format (`"svg"` | `"dxf"`) in, file bytes out.
+/// Project JSON + fold progress (0 = flat, 1 = erected) in, `Folded` JSON (3D panels) out.
+#[wasm_bindgen]
+pub fn fold(project_json: &str, progress: f64) -> Result<String, JsValue> {
+    let p = parse_project(project_json)?;
+    to_json(&pf_core::fold(&p, progress).map_err(core_err)?)
+}
+
+/// Project JSON + format (`svg` `dxf` `pdf` `cf2` `hpgl` `glb`) + optional `ExportOptions` JSON
+/// in, file bytes out.
 #[wasm_bindgen(js_name = exportFile)]
-pub fn export_file(project_json: &str, format: &str) -> Result<Vec<u8>, JsValue> {
+pub fn export_file(
+    project_json: &str,
+    format: &str,
+    options_json: Option<String>,
+) -> Result<Vec<u8>, JsValue> {
     let p = parse_project(project_json)?;
     let f = Format::parse(format)
         .ok_or_else(|| error("unknown_format", &format!("unsupported format '{format}'")))?;
-    Ok(pf_core::export(&p, f).map_err(core_err)?.bytes)
+    let opts: pf_core::ExportOptions = match options_json.as_deref() {
+        None | Some("") => pf_core::ExportOptions::default(),
+        Some(j) => serde_json::from_str(j).map_err(|e| error("invalid_options", &e.to_string()))?,
+    };
+    Ok(pf_core::export_with(&p, f, &opts).map_err(core_err)?.bytes)
+}
+
+/// Project JSON + `Nesting` JSON in, `NestSummary` JSON out.
+#[wasm_bindgen]
+pub fn nest(project_json: &str, nesting_json: &str) -> Result<String, JsValue> {
+    let p = parse_project(project_json)?;
+    let n: pf_core::Nesting =
+        serde_json::from_str(nesting_json).map_err(|e| error("invalid_options", &e.to_string()))?;
+    to_json(&pf_core::nest_preview(&p, &n).map_err(core_err)?)
 }

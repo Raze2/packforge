@@ -26,10 +26,27 @@ class ExportController extends Controller
             'project.params' => ['sometimes', 'array'],
             'project.board' => ['required'],
             'format' => ['required', 'string', 'in:'.implode(',', $formats)],
+            'options' => ['sometimes', 'nullable', 'array'],
+            'options.rotate' => ['sometimes', 'integer', 'in:0,90,180,270'],
+            'options.mirror' => ['sometimes', 'boolean'],
+            'options.page' => ['sometimes', 'nullable', 'in:actual,a4,a3,letter'],
+            'options.profile' => ['sometimes', 'nullable', 'in:standard,cut-crease'],
+            'options.nesting' => ['sometimes', 'nullable', 'array'],
+            'options.nesting.sheet_width' => ['required_with:options.nesting', 'numeric', 'min:1', 'max:10000'],
+            'options.nesting.sheet_height' => ['required_with:options.nesting', 'numeric', 'min:1', 'max:10000'],
         ]);
+        // Only server-side config may set a watermark (e.g. for a free plan), never the browser.
+        $options = array_filter(
+            (array) ($data['options'] ?? []),
+            fn ($v, $k) => $k !== 'watermark' && $v !== null,
+            ARRAY_FILTER_USE_BOTH,
+        );
+        if ($watermark = config('packforge.export_route.watermark')) {
+            $options['watermark'] = (string) $watermark;
+        }
 
         try {
-            return $client->design($data['project'])->export($data['format']);
+            return $client->design($data['project'])->export($data['format'], $options);
         } catch (ValidationException $e) {
             return response()->json(['message' => $e->getMessage(), 'errors' => $e->messages()], 422);
         } catch (ConnectionException $e) {

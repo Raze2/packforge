@@ -83,6 +83,15 @@ impl DieLine {
         b
     }
 
+    /// Bounding box of every entity, including drawing aids (sheet outlines, notes).
+    pub fn bbox_all(&self) -> BBox {
+        let mut b = BBox::empty();
+        for e in &self.entities {
+            b.union(&e.path.bbox());
+        }
+        b
+    }
+
     pub fn length_of(&self, t: LineType) -> f64 {
         self.entities
             .iter()

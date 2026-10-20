@@ -142,13 +142,29 @@ for more grades, and physical sample verification of each style. The full ordere
 - Thumbnail generation via CLI; library search & categories in UI.
 - Every style: golden tests + physical sample verification checklist.
 
-## Stage 6 — 3D fold preview (M–L)
+## Stage 6 — 3D fold preview (M–L) — ✅ done
+
+Status: `pf-fold3d` folds the panel/hinge model to any progress (rigid rotations about hinge
+lines, print side out) and writes GLB. Tests check that **every style folds into a closed box of
+the expected size** and that the RSC glue flap lands on its panel. The designer has a dependency-
+free WebGL 2 viewer (2D/3D toggle, fold slider, fold animation, orbit/zoom, kraft or boxboard
+colours). Not yet: board thickness in 3D, artwork textures, OBJ/STL.
+
 
 - `pf-fold3d`: panel graph → transforms by hinge angle; board thickness; mesh via lyon.
 - three.js viewer in web UI; fold slider 0–100 %; orbit/zoom; PNG snapshot.
 - glTF/GLB export (premium); OBJ/STL.
 
-## Stage 7 — Production exports (M–L)
+## Stage 7 — Production exports (M–L) — ✅ done (CAM verification pending)
+
+Status: PDF (1:1 or fitted to A4/A3/Letter, overall dimensions, title block, legend, optional
+watermark), CF2, HPGL/PLT and GLB writers; output profiles (built-in `standard`, `cut-crease`, or
+custom TOML/JSON) for DXF layers, CF2 type codes and HPGL pens; rotate/mirror; grid nesting with
+utilisation. All formats are deterministic and pinned by golden files; CF2/HPGL are read back in
+tests to confirm line lengths. Available in the core, CLI, API (`/export` options, `/nest`,
+`/fold`), WASM, the web designer's Export dialog, the desktop app and the Laravel package.
+Not yet: true-shape nesting, a profile editor UI, verification on a real cutting table.
+
 
 - PDF (krilla): 1:1 scale, title block, dimensions, legend; watermark in Free.
 - CF2 and HPGL writers from public specs; post-processor profiles (line type → tool/pen,

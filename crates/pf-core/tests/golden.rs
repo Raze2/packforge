@@ -96,7 +96,20 @@ fn cases() -> Vec<(&'static str, Project)> {
 #[test]
 fn golden_exports() {
     for (name, p) in cases() {
-        for f in [Format::Svg, Format::Dxf] {
+        // Production formats are pinned for the reference style; drawing formats for all.
+        let formats: &[Format] = if name.starts_with("fefco-0201_") {
+            &[
+                Format::Svg,
+                Format::Dxf,
+                Format::Pdf,
+                Format::Cf2,
+                Format::Hpgl,
+                Format::Glb,
+            ]
+        } else {
+            &[Format::Svg, Format::Dxf]
+        };
+        for &f in formats {
             let file = export(&p, f).expect("export");
             check(&format!("{name}.{}", f.extension()), &file.bytes);
         }
@@ -108,7 +121,14 @@ fn golden_exports() {
 #[test]
 fn exports_are_deterministic() {
     for (_, p) in cases() {
-        for f in [Format::Svg, Format::Dxf] {
+        for f in [
+            Format::Svg,
+            Format::Dxf,
+            Format::Pdf,
+            Format::Cf2,
+            Format::Hpgl,
+            Format::Glb,
+        ] {
             assert_eq!(export(&p, f).expect("a"), export(&p, f).expect("b"));
         }
     }

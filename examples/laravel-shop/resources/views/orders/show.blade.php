@@ -38,6 +38,7 @@
             @if ($order->status === 'ready')
                 <div class="actions">
                     <a class="btn" href="{{ route('orders.download', [$order, 'dxf']) }}">Download DXF</a>
+                    <a class="btn ghost" href="{{ route('orders.download', [$order, 'pdf']) }}">PDF proof</a>
                     <a class="btn ghost" href="{{ route('orders.download', [$order, 'svg']) }}">Download SVG</a>
                 </div>
             @endif

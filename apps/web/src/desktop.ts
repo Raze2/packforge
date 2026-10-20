@@ -17,8 +17,13 @@ export const desktopPlatform: Platform = {
     });
     return saved?.name ?? null;
   },
-  async exportFile(project, format, suggestedName) {
-    const path = await invoke<string | null>('export_file', { project, format, suggestedName });
+  async exportFile(project, format, suggestedName, options) {
+    const path = await invoke<string | null>('export_file', {
+      project,
+      format,
+      suggestedName,
+      options: options ?? null,
+    });
     return path !== null;
   },
   newDocument: () => void invoke('new_document'),

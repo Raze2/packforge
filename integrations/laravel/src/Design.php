@@ -92,19 +92,63 @@ class Design implements JsonSerializable
         return $this->client->render($this->toArray());
     }
 
-    public function export(string $format): ExportedFile
+    /**
+     * @param  array<string, mixed>  $options  rotate (0/90/180/270), mirror, page (actual/a4/a3/letter),
+     *                                         watermark, profile (standard/cut-crease), nesting
+     */
+    public function export(string $format, array $options = []): ExportedFile
     {
-        return $this->client->export($this->toArray(), $format);
+        return $this->client->export($this->toArray(), $format, $options);
     }
 
-    public function dxf(): ExportedFile
+    public function dxf(array $options = []): ExportedFile
     {
-        return $this->export('dxf');
+        return $this->export('dxf', $options);
     }
 
-    public function svg(): ExportedFile
+    public function svg(array $options = []): ExportedFile
     {
-        return $this->export('svg');
+        return $this->export('svg', $options);
+    }
+
+    /** PDF at 1:1 by default; pass ['page' => 'a4'] to fit a sheet. */
+    public function pdf(array $options = []): ExportedFile
+    {
+        return $this->export('pdf', $options);
+    }
+
+    /** CF2 for die-makers and cutting tables. */
+    public function cf2(array $options = []): ExportedFile
+    {
+        return $this->export('cf2', $options);
+    }
+
+    /** HPGL plot file for plotters and sample tables. */
+    public function plt(array $options = []): ExportedFile
+    {
+        return $this->export('hpgl', $options);
+    }
+
+    /** Binary glTF 3D model of the erected box. */
+    public function glb(): ExportedFile
+    {
+        return $this->export('glb');
+    }
+
+    /**
+     * How many blanks fit on a sheet (mm): e.g. ['sheet_width' => 2400, 'sheet_height' => 1600].
+     *
+     * @return array<string, mixed>
+     */
+    public function nest(array $nesting): array
+    {
+        return $this->client->nest($this->toArray(), $nesting);
+    }
+
+    /** @return array<string, mixed> */
+    public function fold(float $progress = 1.0): array
+    {
+        return $this->client->fold($this->toArray(), $progress);
     }
 
     /** @return array<string, mixed> project payload as sent to the API */

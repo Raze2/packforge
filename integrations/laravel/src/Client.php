@@ -74,12 +74,21 @@ class Client
         return RenderResult::fromArray($res->json());
     }
 
-    /** @param  array<string, mixed>  $project */
-    public function export(array $project, string $format): ExportedFile
+    /**
+     * Exports a file: svg, dxf, pdf, cf2, hpgl (plt) or glb.
+     *
+     * @param  array<string, mixed>  $project
+     * @param  array<string, mixed>  $options  rotate, mirror, page, watermark, profile, nesting
+     */
+    public function export(array $project, string $format, array $options = []): ExportedFile
     {
+        $body = ['project' => $project, 'format' => strtolower($format)];
+        if ($options !== []) {
+            $body['options'] = $options;
+        }
         $res = $this->send(fn () => $this->request()
             ->withHeaders(['Accept' => '*/*'])
-            ->post('export', ['project' => $project, 'format' => strtolower($format)]));
+            ->post('export', $body));
 
         return new ExportedFile(
             contents: $res->body(),
@@ -87,6 +96,29 @@ class Client
             filename: self::filenameFrom($res->header('Content-Disposition'), $project, $format),
             etag: $res->header('ETag') ?: null,
         );
+    }
+
+    /**
+     * How many blanks fit on a sheet.
+     *
+     * @param  array<string, mixed>  $project
+     * @param  array{sheet_width: float|int, sheet_height: float|int, gap?: float|int, margin?: float|int, allow_rotation?: bool, max_count?: int}  $nesting
+     * @return array{count: int, cols: int, rows: int, rotated: bool, blank_width: float, blank_height: float, sheet_area_m2: float, utilisation: float}
+     */
+    public function nest(array $project, array $nesting): array
+    {
+        return $this->send(fn () => $this->request()->post('nest', ['project' => $project, 'nesting' => $nesting]))->json();
+    }
+
+    /**
+     * 3D panel positions of the folded design (progress 0 = flat, 1 = erected).
+     *
+     * @param  array<string, mixed>  $project
+     * @return array<string, mixed>
+     */
+    public function fold(array $project, float $progress = 1.0): array
+    {
+        return $this->send(fn () => $this->request()->post('fold', ['project' => $project, 'progress' => $progress]))->json();
     }
 
     protected function request(bool $auth = true): PendingRequest

@@ -125,6 +125,7 @@ impl Segment {
         }
     }
 
+    /// Applies a similarity transform (rotation, mirroring, uniform scale, translation).
     pub fn transform(&self, t: &Transform) -> Segment {
         match *self {
             Segment::Line { from, to } => Segment::Line {
@@ -134,24 +135,16 @@ impl Segment {
             Segment::Arc {
                 center,
                 radius,
-                start,
                 sweep,
+                ..
             } => {
-                if t.mirror_x {
-                    // Mirroring across a vertical axis maps angle a → π − a and flips direction.
-                    Segment::Arc {
-                        center: t.apply(center),
-                        radius,
-                        start: std::f64::consts::PI - start,
-                        sweep: -sweep,
-                    }
-                } else {
-                    Segment::Arc {
-                        center: t.apply(center),
-                        radius,
-                        start,
-                        sweep,
-                    }
+                let c = t.apply(center);
+                let s = t.apply(self.start_point());
+                Segment::Arc {
+                    center: c,
+                    radius: radius * t.scale(),
+                    start: (s.y - c.y).atan2(s.x - c.x),
+                    sweep: if t.flips() { -sweep } else { sweep },
                 }
             }
         }
@@ -374,39 +367,113 @@ impl BBox {
     }
 }
 
-/// Translation plus optional mirror across the vertical line `x = mirror_axis`.
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+/// 2D affine transform `x' = a·x + c·y + e`, `y' = b·x + d·y + f`. Arcs stay exact for
+/// similarity transforms (rotations, mirrors, uniform scale, translations), which is all the
+/// constructors produce.
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Transform {
-    pub dx: f64,
-    pub dy: f64,
-    pub mirror_x: bool,
-    pub mirror_axis: f64,
+    pub a: f64,
+    pub b: f64,
+    pub c: f64,
+    pub d: f64,
+    pub e: f64,
+    pub f: f64,
+}
+
+impl Default for Transform {
+    fn default() -> Self {
+        Self::IDENTITY
+    }
 }
 
 impl Transform {
+    pub const IDENTITY: Transform = Transform {
+        a: 1.0,
+        b: 0.0,
+        c: 0.0,
+        d: 1.0,
+        e: 0.0,
+        f: 0.0,
+    };
+
     pub fn translate(dx: f64, dy: f64) -> Self {
         Self {
-            dx,
-            dy,
-            ..Self::default()
+            e: dx,
+            f: dy,
+            ..Self::IDENTITY
         }
     }
 
+    /// Mirror across the vertical line `x = axis`.
     pub fn mirror_x(axis: f64) -> Self {
         Self {
-            mirror_x: true,
-            mirror_axis: axis,
-            ..Self::default()
+            a: -1.0,
+            e: 2.0 * axis,
+            ..Self::IDENTITY
+        }
+    }
+
+    /// Counter-clockwise rotation by `degrees` around `centre`.
+    pub fn rotate(degrees: f64, centre: Point) -> Self {
+        // Exact values for quarter turns avoid tiny rounding in exports.
+        let quarter = degrees.rem_euclid(360.0) / 90.0;
+        let (s, c) = if quarter.fract() == 0.0 {
+            [(0.0, 1.0), (1.0, 0.0), (0.0, -1.0), (-1.0, 0.0)][quarter as usize % 4]
+        } else {
+            degrees.to_radians().sin_cos()
+        };
+        let r = Self {
+            a: c,
+            b: s,
+            c: -s,
+            d: c,
+            e: 0.0,
+            f: 0.0,
+        };
+        Self::translate(centre.x, centre.y)
+            .then(&r)
+            .then(&Self::translate(-centre.x, -centre.y))
+    }
+
+    pub fn uniform_scale(k: f64) -> Self {
+        Self {
+            a: k,
+            d: k,
+            ..Self::IDENTITY
+        }
+    }
+
+    /// `self ∘ other`: applies `other` first, then `self`.
+    pub fn then(&self, o: &Transform) -> Transform {
+        Transform {
+            a: self.a * o.a + self.c * o.b,
+            b: self.b * o.a + self.d * o.b,
+            c: self.a * o.c + self.c * o.d,
+            d: self.b * o.c + self.d * o.d,
+            e: self.a * o.e + self.c * o.f + self.e,
+            f: self.b * o.e + self.d * o.f + self.f,
         }
     }
 
     pub fn apply(&self, p: Point) -> Point {
-        let x = if self.mirror_x {
-            2.0 * self.mirror_axis - p.x
-        } else {
-            p.x
-        };
-        Point::new(x + self.dx, p.y + self.dy)
+        Point::new(
+            self.a * p.x + self.c * p.y + self.e,
+            self.b * p.x + self.d * p.y + self.f,
+        )
+    }
+
+    fn det(&self) -> f64 {
+        self.a * self.d - self.b * self.c
+    }
+
+    /// Length scale factor.
+    pub fn scale(&self) -> f64 {
+        self.det().abs().sqrt()
+    }
+
+    /// True when the transform mirrors (reverses orientation).
+    pub fn flips(&self) -> bool {
+        self.det() < 0.0
     }
 }
 
@@ -508,6 +575,44 @@ mod tests {
         assert!((b.max.y - 2.0).abs() < 1e-9);
         assert!((b.min.x + 2.0).abs() < 1e-9);
         assert!((a.length() - 2.0 * PI).abs() < 1e-9);
+    }
+
+    #[test]
+    fn rotation_and_composition() {
+        let r = Transform::rotate(90.0, Point::new(0.0, 0.0));
+        assert!(r
+            .apply(Point::new(1.0, 0.0))
+            .approx_eq(Point::new(0.0, 1.0)));
+        let about = Transform::rotate(180.0, Point::new(5.0, 5.0));
+        assert!(about
+            .apply(Point::new(6.0, 5.0))
+            .approx_eq(Point::new(4.0, 5.0)));
+        let t = Transform::translate(10.0, 0.0).then(&r);
+        assert!(t
+            .apply(Point::new(1.0, 0.0))
+            .approx_eq(Point::new(10.0, 1.0)));
+        assert!(!r.flips() && Transform::mirror_x(0.0).flips());
+    }
+
+    #[test]
+    fn arcs_survive_rotation_and_mirroring() {
+        let a = Segment::Arc {
+            center: Point::new(3.0, 1.0),
+            radius: 2.0,
+            start: 0.3,
+            sweep: 1.2,
+        };
+        for t in [
+            Transform::rotate(90.0, Point::new(1.0, 2.0)),
+            Transform::rotate(33.0, Point::new(0.0, 0.0)),
+            Transform::mirror_x(4.0).then(&Transform::translate(1.0, 1.0)),
+            Transform::uniform_scale(2.5),
+        ] {
+            let m = a.transform(&t);
+            assert!(m.start_point().approx_eq(t.apply(a.start_point())), "{t:?}");
+            assert!(m.end_point().approx_eq(t.apply(a.end_point())), "{t:?}");
+            assert!((m.length() - a.length() * t.scale()).abs() < 1e-9);
+        }
     }
 
     #[test]

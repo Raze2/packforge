@@ -1,7 +1,7 @@
 // Host integration for shells that provide native files (the desktop app).
 // Without a platform, the designer uses browser downloads and a file picker.
 
-import type { ExportFormat, Project } from './types';
+import type { ExportFormat, ExportOptions, Project } from './types';
 
 export interface OpenedDoc {
   name: string;
@@ -14,7 +14,12 @@ export interface Platform {
   /** Saves to the current file (or asks where); resolves the document name, null if cancelled. */
   save(contents: string, suggestedName: string, saveAs: boolean): Promise<string | null>;
   /** Exports with a save dialog; resolves false when cancelled. */
-  exportFile(project: Project, format: ExportFormat, suggestedName: string): Promise<boolean>;
+  exportFile(
+    project: Project,
+    format: ExportFormat,
+    suggestedName: string,
+    options?: ExportOptions,
+  ): Promise<boolean>;
   newDocument(): void;
   /** Reports the document name and unsaved state (window title, close prompt). */
   setDocument(name: string | null, dirty: boolean): void;
@@ -26,6 +31,7 @@ export type DesignerCommand =
   | 'file.open'
   | 'file.save'
   | 'file.save-as'
+  | 'file.export'
   | 'file.export-dxf'
   | 'file.export-svg'
   | 'view.fit';

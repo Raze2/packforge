@@ -2192,8 +2192,10 @@ version = "0.1.0"
 dependencies = [
  "pf-component",
  "pf-export",
+ "pf-fold3d",
  "pf-geom",
  "pf-model",
+ "pf-optimize",
  "serde",
  "thiserror 1.0.69",
 ]
@@ -2205,12 +2207,24 @@ dependencies = [
  "pf-geom",
  "pf-model",
  "serde",
+ "toml 0.8.23",
 ]
 
 [[package]]
 name = "pf-expr"
 version = "0.1.0"
 dependencies = [
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "pf-fold3d"
+version = "0.1.0"
+dependencies = [
+ "pf-geom",
+ "pf-model",
+ "serde",
+ "serde_json",
  "thiserror 1.0.69",
 ]
 
@@ -2226,6 +2240,13 @@ name = "pf-model"
 version = "0.1.0"
 dependencies = [
  "pf-geom",
+ "serde",
+]
+
+[[package]]
+name = "pf-optimize"
+version = "0.1.0"
+dependencies = [
  "serde",
 ]
 

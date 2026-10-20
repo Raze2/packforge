@@ -32,12 +32,18 @@ $result->stats->blankWidth;    // 1051.0 (mm)
 $result->stats->blankAreaM2;   // 0.3805
 $result->warnings();           // ['…']
 
-$dxf = $design->dxf();                       // or ->svg(), ->export('dxf')
+$dxf = $design->dxf();                       // or ->svg(), ->pdf(), ->cf2(), ->plt(), ->glb()
 $dxf->store("orders/{$order->id}/{$dxf->filename}");   // any filesystem disk
 return $dxf;                                 // from a controller: downloads the file
 
 // From a project saved by the designer (pf:save / pf:change event):
 PackForge::design($order->project)->dxf();
+
+// Production options: rotate, mirror, page (PDF), watermark (PDF), profile, nesting.
+$design->pdf(['page' => 'a4', 'watermark' => 'Proof']);
+$design->cf2(['rotate' => 90, 'nesting' => ['sheet_width' => 2400, 'sheet_height' => 1600]]);
+$design->nest(['sheet_width' => 2400, 'sheet_height' => 1600]);   // ['count' => 8, 'utilisation' => 0.77, ...]
+$design->fold(0.5);                                                // 3D panels (for your own viewer)
 
 PackForge::components();   // catalogue
 PackForge::describe('fefco-0201');   // parameter schema
@@ -110,7 +116,10 @@ Always re-validate a submitted project on the server (`PackForge::design($projec
 ### Export route
 
 Configured under `packforge.export_route`: `enabled`, `uri`, `name`, `middleware`
-(default `['web', 'throttle:60,1']` — add `auth` to restrict it) and allowed `formats`.
+(default `['web', 'throttle:60,1']` — add `auth` to restrict it), allowed `formats` (svg, dxf,
+pdf, cf2, hpgl, glb) and `watermark` (`PACKFORGE_EXPORT_WATERMARK`). Options chosen in the
+designer's Export dialog are validated and forwarded; a watermark is only ever set by your
+server config, never by the browser.
 Pass `:export-endpoint="false"` to a component to keep exports browser-only (SVG/DXF from WASM).
 
 ## Testing

@@ -17,6 +17,8 @@
     type ComponentInfo,
     type ComponentSummary,
     type ExportFormat,
+    type ExportOptions,
+    FORMAT_INFO,
     type LineType,
     type ParamValue,
     type Project,
@@ -26,6 +28,8 @@
   import { UNITS } from './units';
   import type { DesignerCommand, Platform } from './platform';
   import DielineView from './components/DielineView.svelte';
+  import FoldView from './components/FoldView.svelte';
+  import ExportDialog from './components/ExportDialog.svelte';
   import Library from './components/Library.svelte';
   import ParamForm from './components/ParamForm.svelte';
   import StatsBar from './components/StatsBar.svelte';
@@ -41,6 +45,7 @@
   export interface ExportDetail {
     project: Project;
     format: ExportFormat;
+    options: ExportOptions;
     filename: string;
     mime: string;
     bytes: Uint8Array;
@@ -72,7 +77,7 @@
   export interface DesignerApi {
     getProject: () => Project;
     setProject: (p: Project) => void;
-    exportFile: (format: ExportFormat) => ExportDetail | null;
+    exportFile: (format: ExportFormat, options?: ExportOptions) => ExportDetail | null;
     /** Runs a host command (desktop menu items). */
     command: (c: DesignerCommand | string) => void;
     /** Opens a project file's contents as the current document. */
@@ -125,6 +130,8 @@
   let docName = $state<string | null>(null);
   let savedJson = $state('');
   let fitNonce = $state(0);
+  let view = $state<'2d' | '3d'>('2d');
+  let exportOpen = $state(false);
   const docJson = (p: Project) =>
     JSON.stringify({ c: p.component_id, p: p.params, b: p.board, u: p.units });
   const dirty = $derived(savedJson !== '' && docJson(project) !== savedJson);
@@ -197,7 +204,7 @@
     bindApi?.({
       getProject: () => $state.snapshot(project) as Project,
       setProject: (p) => (project = { ...p, params: { ...p.params } }),
-      exportFile: (f) => buildExport(f),
+      exportFile: (f, o) => buildExport(f, o ?? {}),
       command: runCommand,
       openText,
       notify: (m) => (openError = m),
@@ -320,6 +327,9 @@
         return void save(false);
       case 'file.save-as':
         return void save(true);
+      case 'file.export':
+        exportOpen = true;
+        return;
       case 'file.export-dxf':
         return void exportAs('dxf');
       case 'file.export-svg':
@@ -330,30 +340,34 @@
     }
   }
 
-  function buildExport(format: ExportFormat): ExportDetail | null {
+  function buildExport(format: ExportFormat, options: ExportOptions = {}): ExportDetail | null {
     const snap = $state.snapshot(project) as Project;
     try {
-      const bytes = core.exportFile(snap, format);
+      const bytes = core.exportFile(snap, format, options);
       return {
         project: snap,
         format,
+        options,
         bytes,
-        filename: `${snap.component_id}.${format}`,
-        mime: format === 'svg' ? 'image/svg+xml' : 'application/dxf',
+        filename: `${snap.component_id}.${FORMAT_INFO[format].ext}`,
+        mime: FORMAT_INFO[format].mime,
       };
     } catch (e) {
-      if (e instanceof CoreError) onerror?.(e);
+      if (e instanceof CoreError) {
+        onerror?.(e);
+        openError = e.message;
+      }
       return null;
     }
   }
 
-  async function exportAs(format: ExportFormat) {
-    const d = buildExport(format);
+  async function exportAs(format: ExportFormat, options: ExportOptions = {}) {
+    const d = buildExport(format, options);
     if (!d) return;
     if (onexport?.(d) === true) return;
     if (platform) {
       try {
-        await platform.exportFile(d.project, format, d.project.component_id);
+        await platform.exportFile(d.project, format, d.project.component_id, options);
       } catch (err) {
         openError = message(err);
       }
@@ -411,11 +425,8 @@
         />
       {/if}
       <button type="button" class="ghost" onclick={() => save()} disabled={!ready}>{t('action.save')}</button>
-      <button type="button" class="primary" onclick={() => exportAs('dxf')} disabled={!rendered.result}>
-        {t('action.export_dxf')}
-      </button>
-      <button type="button" class="ghost" onclick={() => exportAs('svg')} disabled={!rendered.result}>
-        {t('action.export_svg')}
+      <button type="button" class="primary" onclick={() => (exportOpen = true)} disabled={!rendered.result}>
+        {t('action.export')}…
       </button>
     </div>
 
@@ -463,6 +474,28 @@
       {:else if !ready}
         <div class="state">{t('loading')}</div>
       {:else}
+        <div class="views" role="group" aria-label={t('view.label')}>
+          <button type="button" class:active={view === '2d'} aria-pressed={view === '2d'} onclick={() => (view = '2d')}>
+            {t('view.2d')}
+          </button>
+          <button type="button" class:active={view === '3d'} aria-pressed={view === '3d'} onclick={() => (view = '3d')}>
+            {t('view.3d')}
+          </button>
+        </div>
+        {#if view === '3d' && rendered.result}
+          <FoldView
+            {project}
+            corrugated={!!rendered.result.board.flute}
+            dark={resolvedTheme === 'dark'}
+            labels={{
+              fold: t('fold.progress'),
+              play: t('fold.play'),
+              flatten: t('fold.flatten'),
+              reset: t('fold.reset'),
+              unsupported: t('fold.unsupported'),
+            }}
+          />
+        {:else}
         <DielineView
           result={shown}
           {hidden}
@@ -477,7 +510,8 @@
             <span>{rendered.error.message}</span>
           </div>
         {/if}
-        {#if presentLines.length}
+        {/if}
+        {#if presentLines.length && view === '2d'}
           <div class="legend" role="group" aria-label="Line types">
             {#each presentLines as lt (lt)}
               <button
@@ -517,6 +551,17 @@
       {/if}
     </aside>
   </div>
+
+  <ExportDialog
+    open={exportOpen}
+    {project}
+    {t}
+    onclose={() => (exportOpen = false)}
+    onexport={(f, o) => {
+      exportOpen = false;
+      void exportAs(f, o);
+    }}
+  />
 
   <footer class="stats">
     <StatsBar
@@ -767,6 +812,35 @@
   }
   .state.error {
     color: var(--pf-danger);
+  }
+  .views {
+    position: absolute;
+    z-index: 2;
+    inset-block-start: 12px;
+    inset-inline-end: 12px;
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    background: var(--pf-surface);
+    border: 1px solid var(--pf-border);
+    border-radius: 10px;
+    box-shadow: var(--pf-shadow);
+  }
+  .views button {
+    min-width: 40px;
+    height: 28px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--pf-text);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .views button.active {
+    background: var(--pf-accent);
+    color: var(--pf-accent-text);
   }
   .legend {
     position: absolute;

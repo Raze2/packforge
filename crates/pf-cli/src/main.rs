@@ -30,17 +30,100 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    /// Fold a design in 3D and print the panel corners as JSON (progress 0 = flat, 1 = erected).
+    Fold {
+        #[command(flatten)]
+        design: DesignArgs,
+        #[arg(long, default_value_t = 1.0)]
+        progress: f64,
+    },
     /// Export a design to a file.
     Export {
         #[command(flatten)]
         design: DesignArgs,
-        /// Output format: svg | dxf
+        /// Output format: svg | dxf | pdf | cf2 | hpgl | glb
         #[arg(short, long)]
         format: String,
         /// Output file ("-" for stdout). Default: <component>.<ext>
         #[arg(short, long)]
         output: Option<PathBuf>,
+        #[command(flatten)]
+        production: ProductionArgs,
     },
+    /// How many blanks fit on a sheet.
+    Nest {
+        #[command(flatten)]
+        design: DesignArgs,
+        /// Sheet size in mm, e.g. 2400x1600
+        #[arg(long)]
+        sheet: String,
+        #[arg(long, default_value_t = 8.0)]
+        gap: f64,
+        #[arg(long, default_value_t = 10.0)]
+        margin: f64,
+    },
+}
+
+#[derive(Args)]
+struct ProductionArgs {
+    /// Rotate counter-clockwise: 0, 90, 180, 270
+    #[arg(long, default_value_t = 0)]
+    rotate: i32,
+    /// Mirror left/right
+    #[arg(long)]
+    mirror: bool,
+    /// PDF page: actual (1:1), a4, a3, letter
+    #[arg(long)]
+    page: Option<String>,
+    /// PDF watermark text
+    #[arg(long)]
+    watermark: Option<String>,
+    /// Output profile: standard, cut-crease
+    #[arg(long)]
+    profile: Option<String>,
+    /// Nest on a sheet, e.g. 2400x1600 (mm)
+    #[arg(long)]
+    sheet: Option<String>,
+    /// Gap between nested blanks (mm)
+    #[arg(long, default_value_t = 8.0)]
+    gap: f64,
+    /// Sheet margin (mm)
+    #[arg(long, default_value_t = 10.0)]
+    margin: f64,
+}
+
+fn parse_sheet(s: &str, gap: f64, margin: f64) -> Result<pf_core::Nesting, String> {
+    let (w, h) = s
+        .to_ascii_lowercase()
+        .split_once('x')
+        .and_then(|(w, h)| Some((w.trim().parse::<f64>().ok()?, h.trim().parse::<f64>().ok()?)))
+        .ok_or_else(|| format!("sheet must look like 2400x1600, got '{s}'"))?;
+    Ok(pf_core::Nesting {
+        sheet_width: w,
+        sheet_height: h,
+        gap,
+        margin,
+        allow_rotation: true,
+        max_count: None,
+    })
+}
+
+impl ProductionArgs {
+    fn options(&self) -> Result<pf_core::ExportOptions, String> {
+        Ok(pf_core::ExportOptions {
+            rotate: self.rotate,
+            mirror: self.mirror,
+            page: self.page.clone(),
+            watermark: self.watermark.clone(),
+            profile: self.profile.clone(),
+            custom_profile: None,
+            nesting: self
+                .sheet
+                .as_deref()
+                .map(|s| parse_sheet(s, self.gap, self.margin))
+                .transpose()?,
+        })
+    }
 }
 
 #[derive(Args)]
@@ -142,14 +225,40 @@ fn run(cli: Cli) -> Result<(), String> {
                 eprintln!("{:?}: {}", d.severity, d.message);
             }
         }
+        Command::Fold { design, progress } => {
+            let f = pf_core::fold(&design.project()?, progress).map_err(|e| e.to_string())?;
+            println!("{}", pretty(&f)?);
+        }
+        Command::Nest {
+            design,
+            sheet,
+            gap,
+            margin,
+        } => {
+            let n = pf_core::nest_preview(&design.project()?, &parse_sheet(&sheet, gap, margin)?)
+                .map_err(|e| e.to_string())?;
+            println!(
+                "{} blanks ({} × {}{}) of {:.0} × {:.0} mm, {:.0}% of the sheet used",
+                n.count,
+                n.cols,
+                n.rows,
+                if n.rotated { ", turned 90°" } else { "" },
+                n.blank_width,
+                n.blank_height,
+                n.utilisation * 100.0
+            );
+        }
         Command::Export {
             design,
             format,
             output,
+            production,
         } => {
-            let f = Format::parse(&format)
-                .ok_or_else(|| format!("unsupported format '{format}' (use svg or dxf)"))?;
-            let file = pf_core::export(&design.project()?, f).map_err(|e| e.to_string())?;
+            let f = Format::parse(&format).ok_or_else(|| {
+                format!("unsupported format '{format}' (use svg, dxf, pdf, cf2, hpgl or glb)")
+            })?;
+            let file = pf_core::export_with(&design.project()?, f, &production.options()?)
+                .map_err(|e| e.to_string())?;
             match output.as_deref() {
                 Some(p) if p.as_os_str() == "-" => std::io::stdout()
                     .write_all(&file.bytes)

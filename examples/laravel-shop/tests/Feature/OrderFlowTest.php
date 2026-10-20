@@ -28,10 +28,10 @@ class OrderFlowTest extends TestCase
                 'diagnostics' => [],
             ]),
             '*/export' => fn ($request) => Http::response(
-                $request['format'] === 'dxf' ? "  0\nEOF\n" : '<svg/>',
+                ['dxf' => "  0\nEOF\n", 'svg' => '<svg/>', 'pdf' => '%PDF-1.4'][$request['format']],
                 200,
                 [
-                    'Content-Type' => $request['format'] === 'dxf' ? 'application/dxf' : 'image/svg+xml',
+                    'Content-Type' => ['dxf' => 'application/dxf', 'svg' => 'image/svg+xml', 'pdf' => 'application/pdf'][$request['format']],
                     'Content-Disposition' => 'attachment; filename="fefco-0201.'.$request['format'].'"',
                 ],
             ),
@@ -65,6 +65,9 @@ class OrderFlowTest extends TestCase
         $this->assertSame('ready', $order->status);
         Storage::disk('local')->assertExists("orders/{$order->id}/fefco-0201.dxf");
         Storage::disk('local')->assertExists("orders/{$order->id}/fefco-0201.svg");
+        Storage::disk('local')->assertExists("orders/{$order->id}/fefco-0201.pdf");
+        Http::assertSent(fn ($r) => $r->url() !== null && str_ends_with($r->url(), '/export')
+            && $r['format'] === 'pdf' && $r['options']['watermark'] === 'Proof - not for production');
         $this->assertEquals(1051, $order->stats['blank_width']);
         $this->assertSame(61.83, $order->estimatedBoardCost()); // 0.380462 m² × 250 × 0.65
 

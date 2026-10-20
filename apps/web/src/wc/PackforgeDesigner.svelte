@@ -25,7 +25,7 @@
   import Designer, { type DesignerApi, type ExportDetail } from '../lib/Designer.svelte';
   import { isLocale } from '../lib/i18n';
   import { download } from '../lib/storage';
-  import type { BoardRef, ExportFormat, ParamValue, Project, Units } from '../lib/types';
+  import type { BoardRef, ExportFormat, ExportOptions, ParamValue, Project, Units } from '../lib/types';
 
   interface Props {
     component?: string;
@@ -100,7 +100,7 @@
       method: 'POST',
       headers,
       credentials: 'same-origin',
-      body: JSON.stringify({ project: d.project, format: d.format }),
+      body: JSON.stringify({ project: d.project, format: d.format, options: d.options }),
     });
     if (!res.ok) throw new Error(`export failed: ${res.status}`);
     download(new Uint8Array(await res.arrayBuffer()), d.filename, d.mime);
@@ -113,8 +113,8 @@
   export function setProject(p: Project): void {
     api?.setProject(p);
   }
-  export function exportFile(format: ExportFormat): ExportDetail | null {
-    return api?.exportFile(format) ?? null;
+  export function exportFile(format: ExportFormat, options?: ExportOptions): ExportDetail | null {
+    return api?.exportFile(format, options) ?? null;
   }
 </script>
 

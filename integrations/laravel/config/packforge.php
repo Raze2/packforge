@@ -28,7 +28,9 @@ return [
         'uri' => 'packforge/export',
         'name' => 'packforge.export',
         'middleware' => ['web', 'throttle:60,1'],
-        'formats' => ['svg', 'dxf'],
+        'formats' => ['svg', 'dxf', 'pdf', 'cf2', 'hpgl', 'glb'],
+        // Text stamped on PDF exports from this route (e.g. 'Proof — not for production').
+        'watermark' => env('PACKFORGE_EXPORT_WATERMARK'),
     ],
 
     /*

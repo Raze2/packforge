@@ -55,7 +55,12 @@ WASM and CSS inlined). It renders into the light DOM, so the host page controls 
 | `pf:export` | `{ project, format, filename, mime, bytes }` | yes — skips the download |
 | `pf:error` | `{ code, message }` | no |
 
-Methods: `el.getProject()`, `el.setProject(project)`, `el.exportFile('svg' | 'dxf')`.
+Methods: `el.getProject()`, `el.setProject(project)`,
+`el.exportFile(format, options?)` with `format` one of `pdf`, `dxf`, `cf2`, `hpgl`, `svg`, `glb`.
+
+The designer has a 2D/3D toggle (fold slider, orbit, zoom) and an **Export…** dialog with the
+format, rotation, mirroring, PDF page, machine profile and sheet nesting (live blanks-per-sheet
+preview). With `export-endpoint`, the options are posted to your backend along with the project.
 
 Without UI, the same core is available to scripts through the generated bindings in
 `apps/web/src/lib/wasm` (`render`, `exportFile`, `listComponents`, `describe`, `boards`);
@@ -74,8 +79,28 @@ JSON in/out unless a file is returned. `/v1/health` and `/v1/openapi.json` are p
 | GET | `/components/{id}` | — | parameter schema |
 | GET | `/boards` | — | board presets |
 | POST | `/render` | `{project}` | `RenderResult`: dieline, fold, stats, diagnostics |
-| POST | `/export` | `{project, format}` | file bytes with `Content-Disposition` and a strong `ETag` (`If-None-Match` → 304) |
+| POST | `/export` | `{project, format, options?}` | file bytes with `Content-Disposition` and a strong `ETag` (`If-None-Match` → 304) |
+| POST | `/nest` | `{project, nesting}` | blanks per sheet, grid, rotation, sheet utilisation |
+| POST | `/fold` | `{project, progress?}` | 3D panel corners (mm) and normals; `progress` 0 = flat, 1 = erected |
 | POST | `/pallet`, `/case-optimize` | | *planned (Stage 8)* |
+
+**Formats:** `svg`, `dxf` (layers per line type), `pdf` (1:1 or fitted, title block, legend),
+`cf2` (die-makers, cutting tables), `hpgl` (`.plt`, plotters), `glb` (3D model of the erected box).
+
+**Export options** (all optional):
+
+| Option | Values | Notes |
+|---|---|---|
+| `rotate` | `0`, `90`, `180`, `270` | Counter-clockwise |
+| `mirror` | `true` / `false` | Cut from the unprinted side |
+| `nesting` | `{sheet_width, sheet_height, gap = 8, margin = 10, allow_rotation = true, max_count}` | mm; grid nesting in one orientation |
+| `page` | `actual` (default), `a4`, `a3`, `letter` | PDF only |
+| `watermark` | text | PDF only |
+| `profile` | `standard`, `cut-crease` | Which line types reach the machine, DXF layer names, CF2 type codes, HPGL pens |
+| `custom_profile` | full profile object | Overrides `profile`; see `crates/pf-export/src/profile.rs` |
+
+> **CF2 / HPGL conventions vary by shop.** Line-type codes, rule thickness and pen numbers come
+> from the output profile: check the defaults against your CAM import and adjust the profile.
 
 `project` example:
 
@@ -99,7 +124,7 @@ Errors are RFC 7807 `application/problem+json` with `type`, `title`, `status`, `
 | 401 | `unauthorized` (with `WWW-Authenticate: Bearer`) |
 | 404 | `not_found`, `unknown_component` |
 | 413 / 415 | `invalid_request` (body too large / not JSON) |
-| 422 | `rule_violation`, `geometry_error` |
+| 422 | `rule_violation`, `geometry_error`, `export_error` (bad options, blank does not fit), `fold_error` |
 | 429 | `rate_limited` (with `Retry-After`) |
 
 Successful authenticated responses carry `X-RateLimit-Limit` and `X-RateLimit-Remaining`.
@@ -161,6 +186,16 @@ $stats = PackForge::design($order->project)->render()->stats;   // blankWidth, b
 <x-packforge-designer :project="$project" mode="configurator" theme="light" height="640px" />
 ```
 
+Production formats and options:
+
+```php
+$design->pdf(['page' => 'a4']);                                    // fitted proof
+$design->cf2(['rotate' => 90, 'profile' => 'cut-crease']);         // cutting table
+$design->plt(['nesting' => ['sheet_width' => 2400, 'sheet_height' => 1600]]);
+$design->glb();                                                    // 3D model
+$design->nest(['sheet_width' => 2400, 'sheet_height' => 1600]);    // ['count' => 8, ...]
+```
+
 Package contents: `Client` + facade, immutable `Design` builder, `RenderResult`/`Stats`/
 `ExportedFile` DTOs, exceptions mapped from problem+json (validation, auth, 404, rate limit,
 connection), retries for connection errors/5xx/429, the Blade component, and the
@@ -175,6 +210,10 @@ pf describe fefco-0201
 pf render fefco-0201 -p L=300 -p W=200 -p H=150 -b C-flute          # stats
 pf render fefco-0201 -p L=300 -p W=200 -p H=150 --caliper 3.2 --json
 pf export fefco-0201 -p L=300 -p W=200 -p H=150 -f dxf -o box.dxf   # -o - for stdout
+pf export fefco-0201 -f pdf --page a4 --sheet 2400x1600 --watermark "Proof"
+pf export fefco-0201 -f cf2 --rotate 90 --profile cut-crease
+pf nest fefco-0201 --sheet 2400x1600 --gap 8 --margin 10
+pf fold fefco-0201 --progress 0.5                                   # 3D panels as JSON
 pf batch orders.csv --format pdf --out ./exports                     # planned (Stage 3)
 ```
 

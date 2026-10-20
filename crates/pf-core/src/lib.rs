@@ -3,15 +3,20 @@
 //! Pure: no filesystem, network, clock or randomness. The built-in library is compiled into
 //! the binary so the same code runs in browsers and servers.
 
+mod export;
 mod library;
+
+pub use export::{export, export_with, nest_preview, ExportOptions, NestSummary};
 
 pub use library::{boards, BUILTIN_COMPONENTS};
 pub use pf_component::{ComponentInfo, ParamDef, ParamIssue, ParamType, RenderError, Tier};
-pub use pf_export::{DxfOptions, Format, SvgOptions};
+pub use pf_export::{DxfOptions, Format, PageSize, Profile, SvgOptions};
+pub use pf_fold3d::{FoldError, Folded, Panel3, Vec3};
 pub use pf_model::{
     Board, BoardRef, Diagnostic, DieLine, FoldModel, LineType, Project, RenderResult, Severity,
     Stats, Units, Value,
 };
+pub use pf_optimize::Nesting;
 
 use serde::Serialize;
 
@@ -25,6 +30,10 @@ pub enum CoreError {
     Render(#[from] pf_component::RenderError),
     #[error("built-in component '{id}' is invalid: {message}")]
     Library { id: String, message: String },
+    #[error("cannot fold this design: {0}")]
+    Fold(#[from] FoldError),
+    #[error("{0}")]
+    Export(String),
 }
 
 impl CoreError {
@@ -38,6 +47,8 @@ impl CoreError {
             CoreError::Render(pf_component::RenderError::Eval { .. }) => "evaluation_error",
             CoreError::Render(pf_component::RenderError::Geometry(_)) => "geometry_error",
             CoreError::Library { .. } => "library_error",
+            CoreError::Fold(_) => "fold_error",
+            CoreError::Export(_) => "export_error",
         }
     }
 }
@@ -122,22 +133,17 @@ pub fn render(project: &Project) -> Result<RenderResult, CoreError> {
     })
 }
 
-/// Renders and exports a project in the requested format.
-pub fn export(project: &Project, format: Format) -> Result<ExportFile, CoreError> {
+/// Folds a project's design to `progress` (0 = flat die-line, 1 = erected box) for 3D display.
+pub fn fold(project: &Project, progress: f64) -> Result<Folded, CoreError> {
     let r = render(project)?;
-    let text = match format {
-        Format::Svg => pf_export::to_svg(
-            &r.dieline,
-            &SvgOptions {
-                title: Some(format!("{} — {}", r.component_id, r.board.id)),
-                ..SvgOptions::default()
-            },
-        ),
-        Format::Dxf => pf_export::to_dxf(&r.dieline, &DxfOptions::default()),
-    };
-    Ok(ExportFile {
-        bytes: text.into_bytes(),
-        mime: format.mime(),
-        filename: format!("{}.{}", r.component_id, format.extension()),
-    })
+    Ok(pf_fold3d::fold(&r.fold, progress)?)
+}
+
+/// Display colour of a board: kraft for corrugated (fluted), off-white for boxboard.
+pub fn board_colour(board: &Board) -> [f32; 4] {
+    if board.flute.is_some() {
+        [0.78, 0.62, 0.42, 1.0]
+    } else {
+        [0.95, 0.94, 0.90, 1.0]
+    }
 }

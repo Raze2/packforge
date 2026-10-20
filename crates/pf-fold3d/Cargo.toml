@@ -1,11 +1,18 @@
 [package]
 name = "pf-fold3d"
-description = "Fold model to 3D mesh and glTF (Stage 6)"
+description = "Fold kinematics: flat panels + hinges to a 3D folded box, and glTF (GLB) export"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
+
+[dependencies]
+pf-geom.workspace = true
+pf-model.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
 
 [lints]
 workspace = true

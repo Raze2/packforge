@@ -46,7 +46,7 @@ fn style(t: LineType) -> Style {
 }
 
 pub fn to_svg(d: &DieLine, opts: &SvgOptions) -> String {
-    let b = d.bbox();
+    let b = d.bbox_all();
     let (w, h) = if b.is_empty() {
         (0.0, 0.0)
     } else {

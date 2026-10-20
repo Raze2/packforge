@@ -5,9 +5,10 @@ exports and pallet optimisation — from **one Rust core** running in the **brow
 on the **desktop (Windows / macOS / Linux, via Tauri)**, and as an **HTTP API** for
 **Laravel/PHP** and other projects.
 
-> Status: Stages 0–5 — core engine, 9 box styles (FEFCO 0200–0204, sleeve, tray, tuck-end
-> cartons), SVG/DXF export, CLI, web designer, `<packforge-designer>` web component, HTTP API,
-> Laravel package and the desktop app (Tauri) working.
+> Status: Stages 0–7 — core engine, 9 box styles (FEFCO 0200–0204, sleeve, tray, tuck-end
+> cartons), 3D fold preview, production exports (PDF, DXF, CF2, HPGL, SVG, GLB) with nesting and
+> machine profiles, CLI, web designer, `<packforge-designer>` web component, HTTP API, Laravel
+> package and the desktop app (Tauri).
 
 ## Quick start
 
@@ -15,6 +16,8 @@ on the **desktop (Windows / macOS / Linux, via Tauri)**, and as an **HTTP API** 
 cargo test --workspace
 cargo run -p pf-cli -- render fefco-0201 -p L=300 -p W=200 -p H=150 -b C-flute
 cargo run -p pf-cli -- export fefco-0201 -p L=300 -p W=200 -p H=150 -f dxf -o box.dxf
+cargo run -p pf-cli -- export fefco-0201 -f pdf --page a4 --sheet 2400x1600   # nested PDF
+cargo run -p pf-cli -- export fefco-0201 -f cf2 --rotate 90                   # cutting table
 cargo build -p pf-wasm --target wasm32-unknown-unknown --release
 
 # Web designer (needs wasm-bindgen-cli 0.2.129 and pnpm)

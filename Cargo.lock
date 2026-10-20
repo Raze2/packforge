@@ -555,8 +555,10 @@ version = "0.1.0"
 dependencies = [
  "pf-component",
  "pf-export",
+ "pf-fold3d",
  "pf-geom",
  "pf-model",
+ "pf-optimize",
  "serde",
  "serde_json",
  "thiserror",
@@ -569,6 +571,7 @@ dependencies = [
  "pf-geom",
  "pf-model",
  "serde",
+ "toml",
 ]
 
 [[package]]
@@ -581,6 +584,13 @@ dependencies = [
 [[package]]
 name = "pf-fold3d"
 version = "0.1.0"
+dependencies = [
+ "pf-geom",
+ "pf-model",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
 
 [[package]]
 name = "pf-geom"
@@ -605,6 +615,9 @@ dependencies = [
 [[package]]
 name = "pf-optimize"
 version = "0.1.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "pf-wasm"

@@ -131,6 +131,7 @@ async fn export_file(
     project: Project,
     format: String,
     suggested_name: String,
+    options: Option<pf_core::ExportOptions>,
 ) -> Result<Option<String>, String> {
     let fmt = Format::parse(&format).ok_or_else(|| format!("unsupported format '{format}'"))?;
     let ext = fmt.extension();
@@ -144,7 +145,7 @@ async fn export_file(
         return Ok(None);
     };
     let path = with_extension(path, ext);
-    export_to(&path, &project, fmt)?;
+    export_to(&path, &project, fmt, &options.unwrap_or_default())?;
     Ok(Some(path.display().to_string()))
 }
 

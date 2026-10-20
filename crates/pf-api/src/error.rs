@@ -154,6 +154,18 @@ impl From<CoreError> for ApiError {
                 "Design cannot be generated",
                 detail,
             ),
+            CoreError::Export(_) => Self::new(
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "export_error",
+                "Export options cannot be applied",
+                detail,
+            ),
+            CoreError::Fold(_) => Self::new(
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "fold_error",
+                "Design cannot be folded",
+                detail,
+            ),
             CoreError::Library { .. } => Self::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "library_error",

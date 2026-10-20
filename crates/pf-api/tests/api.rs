@@ -226,7 +226,7 @@ async fn export_sets_file_headers_and_supports_etags() {
         &app,
         post(
             "/v1/export",
-            json!({ "project": project(), "format": "pdf" }),
+            json!({ "project": project(), "format": "exe" }),
         ),
     )
     .await;
@@ -314,4 +314,76 @@ async fn dev_mode_skips_auth() {
     });
     let r = send(&app, get("/v1/components", None)).await;
     assert_eq!(r.status, StatusCode::OK);
+}
+
+#[tokio::test]
+async fn production_exports_with_options() {
+    let app = server(100);
+    for (format, mime, head) in [
+        ("pdf", "application/pdf", "%PDF-1.4"),
+        ("cf2", "application/vnd.cf2", "$BOF"),
+        ("hpgl", "application/vnd.hp-hpgl", "IN;"),
+        ("glb", "model/gltf-binary", "glTF"),
+    ] {
+        let body = json!({ "project": project(), "format": format, "options": { "rotate": 90 } });
+        let r = send(&app, post("/v1/export", body)).await;
+        assert_eq!(r.status, StatusCode::OK, "{format}");
+        assert_eq!(r.header("content-type"), mime);
+        assert!(r.body.starts_with(head.as_bytes()), "{format}");
+    }
+    let nested = json!({
+        "project": project(),
+        "format": "pdf",
+        "options": { "nesting": { "sheet_width": 2400, "sheet_height": 1600 }, "page": "a4", "watermark": "Draft" }
+    });
+    let r = send(&app, post("/v1/export", nested)).await;
+    assert_eq!(r.status, StatusCode::OK);
+    let pdf = String::from_utf8_lossy(&r.body).to_string();
+    assert!(
+        pdf.contains(" up \\(") && pdf.contains("(Draft) Tj"),
+        "nesting line and watermark"
+    );
+
+    let bad = json!({ "project": project(), "format": "dxf", "options": { "rotate": 45 } });
+    let r = send(&app, post("/v1/export", bad)).await;
+    assert_eq!(r.status, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(r.json()["code"], "export_error");
+
+    let typo = json!({ "project": project(), "format": "dxf", "options": { "rotation": 90 } });
+    assert_eq!(
+        send(&app, post("/v1/export", typo)).await.status,
+        StatusCode::UNPROCESSABLE_ENTITY
+    );
+}
+
+#[tokio::test]
+async fn nest_and_fold_endpoints() {
+    let app = server(100);
+    let r = send(
+        &app,
+        post("/v1/nest", json!({ "project": project(), "nesting": { "sheet_width": 2400, "sheet_height": 1600 } })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::OK);
+    let n = r.json();
+    assert!(n["count"].as_u64().expect("count") >= 2);
+    assert!(n["utilisation"].as_f64().expect("u") > 0.0);
+
+    let r = send(
+        &app,
+        post(
+            "/v1/nest",
+            json!({ "project": project(), "nesting": { "sheet_width": 100, "sheet_height": 100 } }),
+        ),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::UNPROCESSABLE_ENTITY);
+
+    let r = send(
+        &app,
+        post("/v1/fold", json!({ "project": project(), "progress": 1.0 })),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::OK);
+    assert_eq!(r.json()["panels"].as_array().expect("panels").len(), 13);
 }

@@ -7,6 +7,10 @@ import type {
   ComponentInfo,
   ComponentSummary,
   ExportFormat,
+  ExportOptions,
+  Folded,
+  Nesting,
+  NestSummary,
   Project,
   RenderResult,
 } from './types';
@@ -58,9 +62,17 @@ export const core = {
   describe: (id: string): ComponentInfo => call(() => wasm.describe(id)),
   boards: (): Board[] => call(() => wasm.boards()),
   render: (project: Project): RenderResult => call(() => wasm.render(JSON.stringify(project))),
-  exportFile(project: Project, format: ExportFormat): Uint8Array {
+  fold: (project: Project, progress: number): Folded =>
+    call(() => wasm.fold(JSON.stringify(project), progress)),
+  nest: (project: Project, nesting: Nesting): NestSummary =>
+    call(() => wasm.nest(JSON.stringify(project), JSON.stringify(nesting))),
+  exportFile(project: Project, format: ExportFormat, options?: ExportOptions): Uint8Array {
     try {
-      return wasm.exportFile(JSON.stringify(project), format);
+      return wasm.exportFile(
+        JSON.stringify(project),
+        format,
+        options ? JSON.stringify(options) : undefined,
+      );
     } catch (e) {
       throw toCoreError(e);
     }

@@ -62,6 +62,8 @@ pub fn app(settings: Settings) -> Router {
         .route("/v1/boards", get(boards))
         .route("/v1/render", post(render))
         .route("/v1/export", post(export))
+        .route("/v1/nest", post(nest))
+        .route("/v1/fold", post(fold))
         .route_layer(middleware::from_fn_with_state(state.clone(), auth));
 
     let mut router = Router::new()
@@ -178,6 +180,33 @@ async fn render(
 struct ExportRequest {
     project: Project,
     format: String,
+    #[serde(default)]
+    options: pf_core::ExportOptions,
+}
+
+#[derive(Deserialize)]
+struct NestRequest {
+    project: Project,
+    nesting: pf_core::Nesting,
+}
+
+async fn nest(ApiJson(req): ApiJson<NestRequest>) -> Result<Json<pf_core::NestSummary>, ApiError> {
+    Ok(Json(pf_core::nest_preview(&req.project, &req.nesting)?))
+}
+
+#[derive(Deserialize)]
+struct FoldRequest {
+    project: Project,
+    #[serde(default = "erected")]
+    progress: f64,
+}
+
+fn erected() -> f64 {
+    1.0
+}
+
+async fn fold(ApiJson(req): ApiJson<FoldRequest>) -> Result<Json<pf_core::Folded>, ApiError> {
+    Ok(Json(pf_core::fold(&req.project, req.progress)?))
 }
 
 async fn export(
@@ -189,10 +218,13 @@ async fn export(
             StatusCode::BAD_REQUEST,
             "unknown_format",
             "Unknown export format",
-            format!("unsupported format '{}' (use svg or dxf)", req.format),
+            format!(
+                "unsupported format '{}' (use svg, dxf, pdf, cf2, hpgl or glb)",
+                req.format
+            ),
         )
     })?;
-    let file = pf_core::export(&req.project, format)?;
+    let file = pf_core::export_with(&req.project, format, &req.options)?;
     // Exports are deterministic, so the content hash is a strong ETag.
     let etag = format!("\"{}\"", &sha256_hex(&file.bytes)[..32]);
     if headers
