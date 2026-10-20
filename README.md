@@ -47,6 +47,7 @@ PF_KEYS_FILE=keys.toml cargo run -p pf-api                       # http://localh
 | 05 | [API & integrations](docs/05-api-and-integrations.md) | Web component, HTTP API, Laravel package, CLI |
 | 06 | [Licensing](docs/06-licensing.md) | Plans, desktop tokens, web/API enforcement |
 | 07 | [Implementation plan](docs/07-implementation-plan.md) | Stages 0–10, deliverables, done criteria, open decisions |
+| 08 | [Style roadmap](docs/08-style-roadmap.md) | Which box styles come next, in what order, and what the engine needs |
 | ADR | [0001 — Stack](docs/adr/0001-stack.md) | Why Rust + WASM + Svelte + Tauri + axum |
 
 ## At a glance

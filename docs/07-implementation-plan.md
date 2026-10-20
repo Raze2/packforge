@@ -131,7 +131,8 @@ wide tests (every style at defaults and across parameter extremes on three board
 hinges on creases, connected panels, blank formulas). Styles: FEFCO 0200, 0201, 0202, 0203, 0204,
 sleeve, glued-corner tray, straight and reverse tuck end cartons. Still to do from the list below:
 0215, 0300/0310 telescope boxes, 0409, 0421/0427 die-cut mailers, crash-lock bottom, board presets
-for more grades, and physical sample verification of each style.
+for more grades, and physical sample verification of each style. The full ordered list is in
+[08-style-roadmap.md](08-style-roadmap.md).
 
 
 - Priority styles: FEFCO 0200, 0201, 0202, 0203, 0204, 0215, 0300, 0310, 0320, 0409, 0421,
