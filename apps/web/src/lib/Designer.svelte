@@ -24,6 +24,7 @@
     type Units,
   } from './types';
   import { UNITS } from './units';
+  import type { DesignerCommand, Platform } from './platform';
   import DielineView from './components/DielineView.svelte';
   import Library from './components/Library.svelte';
   import ParamForm from './components/ParamForm.svelte';
@@ -64,12 +65,20 @@
     onerror?: (e: CoreError) => void;
     /** Receives an API object for programmatic control (used by the web component). */
     bindApi?: (api: DesignerApi) => void;
+    /** Native file handling (desktop). */
+    platform?: Platform;
   }
 
   export interface DesignerApi {
     getProject: () => Project;
     setProject: (p: Project) => void;
     exportFile: (format: ExportFormat) => ExportDetail | null;
+    /** Runs a host command (desktop menu items). */
+    command: (c: DesignerCommand | string) => void;
+    /** Opens a project file's contents as the current document. */
+    openText: (name: string, contents: string) => void;
+    /** Shows an error banner. */
+    notify: (message: string) => void;
   }
 
   let {
@@ -87,6 +96,7 @@
     onexport,
     onerror,
     bindApi,
+    platform,
   }: Props = $props();
 
   // ── State ────────────────────────────────────────────────────────────────
@@ -111,6 +121,13 @@
   let prefersDark = $state(false);
   let fileInput: HTMLInputElement | undefined = $state();
   let openError = $state<string | null>(null);
+  // Document state for native shells: name of the open file and the last saved content.
+  let docName = $state<string | null>(null);
+  let savedJson = $state('');
+  let fitNonce = $state(0);
+  const docJson = (p: Project) =>
+    JSON.stringify({ c: p.component_id, p: p.params, b: p.board, u: p.units });
+  const dirty = $derived(savedJson !== '' && docJson(project) !== savedJson);
 
   const t = (key: string, vars?: Record<string, string | number>, fallback?: string) =>
     translate(locale, key, vars, fallback);
@@ -145,7 +162,7 @@
   });
   const shown = $derived(rendered.result ?? lastGood);
   const fitKey = $derived(
-    `${project.component_id}|${typeof project.board === 'string' ? project.board : 'custom'}`,
+    `${project.component_id}|${typeof project.board === 'string' ? project.board : 'custom'}|${fitNonce}`,
   );
 
   // ── Lifecycle ────────────────────────────────────────────────────────────
@@ -163,6 +180,7 @@
       const saved = loadAutosave();
       if (saved) project = saved;
     }
+    savedJson = docJson(project);
 
     loadCore()
       .then(() => {
@@ -180,6 +198,9 @@
       getProject: () => $state.snapshot(project) as Project,
       setProject: (p) => (project = { ...p, params: { ...p.params } }),
       exportFile: (f) => buildExport(f),
+      command: runCommand,
+      openText,
+      notify: (m) => (openError = m),
     });
 
     return () => mq?.removeEventListener?.('change', onMq);
@@ -197,6 +218,10 @@
     if (persist) savePrefs({ units: project.units, locale, theme });
   });
 
+  $effect(() => {
+    platform?.setDocument(docName, dirty);
+  });
+
   // ── Actions ──────────────────────────────────────────────────────────────
   function setParam(id: string, value: ParamValue) {
     project.params = { ...project.params, [id]: value };
@@ -204,7 +229,17 @@
 
   function selectComponent(id: string) {
     if (id !== project.component_id) {
-      project = { ...project, component_id: id, params: {} };
+      // Use the component's suggested board; going back from such a component restores the
+      // default board if the user had not changed it.
+      let nextBoard = project.board;
+      try {
+        const next = core.describe(id);
+        if (next.default_board) nextBoard = next.default_board;
+        else if (info?.default_board && project.board === info.default_board) nextBoard = board;
+      } catch {
+        // unknown component: the render error is shown instead
+      }
+      project = { ...project, component_id: id, params: {}, board: nextBoard };
     }
     libraryOpen = false;
   }
@@ -215,13 +250,56 @@
 
   function newDesign() {
     project = { component_id: component, params: {}, board, units: project.units };
+    platform?.newDocument();
+    docName = null;
+    savedJson = docJson(project);
   }
 
-  function save() {
+  const message = (err: unknown) => (err instanceof Error ? err.message : String(err));
+
+  async function save(saveAs = false) {
     const snap = $state.snapshot(project) as Project;
     snap.component_version = shown?.component_version;
     if (onsave?.(snap) === true) return;
-    download(JSON.stringify(snap, null, 2), `${snap.component_id}.pfproj.json`, 'application/json');
+    if (platform) {
+      try {
+        const name = await platform.save(JSON.stringify(snap, null, 2), snap.component_id, saveAs);
+        if (name) {
+          docName = name;
+          savedJson = docJson(snap);
+          openError = null;
+        }
+      } catch (err) {
+        openError = message(err);
+      }
+      return;
+    }
+    download(JSON.stringify(snap, null, 2), `${snap.component_id}.pfproj`, 'application/json');
+    savedJson = docJson(snap);
+  }
+
+  function openText(name: string, contents: string) {
+    try {
+      project = parseProject(contents);
+      docName = name;
+      savedJson = docJson(project);
+      openError = null;
+    } catch (err) {
+      openError = t('error.open', { message: message(err) });
+    }
+  }
+
+  async function open() {
+    if (!platform) {
+      fileInput?.click();
+      return;
+    }
+    try {
+      const doc = await platform.open();
+      if (doc) openText(doc.name, doc.contents);
+    } catch (err) {
+      openError = t('error.open', { message: message(err) });
+    }
   }
 
   async function openFile(e: Event) {
@@ -229,11 +307,26 @@
     const file = input.files?.[0];
     input.value = '';
     if (!file) return;
-    try {
-      project = parseProject(await file.text());
-      openError = null;
-    } catch (err) {
-      openError = t('error.open', { message: err instanceof Error ? err.message : String(err) });
+    openText(file.name, await file.text());
+  }
+
+  function runCommand(c: DesignerCommand | string) {
+    switch (c) {
+      case 'file.new':
+        return newDesign();
+      case 'file.open':
+        return void open();
+      case 'file.save':
+        return void save(false);
+      case 'file.save-as':
+        return void save(true);
+      case 'file.export-dxf':
+        return void exportAs('dxf');
+      case 'file.export-svg':
+        return void exportAs('svg');
+      case 'view.fit':
+        fitNonce += 1;
+        return;
     }
   }
 
@@ -254,10 +347,18 @@
     }
   }
 
-  function exportAs(format: ExportFormat) {
+  async function exportAs(format: ExportFormat) {
     const d = buildExport(format);
     if (!d) return;
     if (onexport?.(d) === true) return;
+    if (platform) {
+      try {
+        await platform.exportFile(d.project, format, d.project.component_id);
+      } catch (err) {
+        openError = message(err);
+      }
+      return;
+    }
     download(d.bytes, d.filename, d.mime);
   }
 
@@ -300,16 +401,16 @@
     <div class="actions">
       {#if mode === 'full'}
         <button type="button" class="ghost" onclick={newDesign}>{t('action.new')}</button>
-        <button type="button" class="ghost" onclick={() => fileInput?.click()}>{t('action.open')}</button>
+        <button type="button" class="ghost" onclick={open}>{t('action.open')}</button>
         <input
           bind:this={fileInput}
           type="file"
-          accept=".json,application/json"
+          accept=".pfproj,.json,application/json"
           hidden
           onchange={openFile}
         />
       {/if}
-      <button type="button" class="ghost" onclick={save} disabled={!ready}>{t('action.save')}</button>
+      <button type="button" class="ghost" onclick={() => save()} disabled={!ready}>{t('action.save')}</button>
       <button type="button" class="primary" onclick={() => exportAs('dxf')} disabled={!rendered.result}>
         {t('action.export_dxf')}
       </button>
@@ -400,6 +501,7 @@
           <h2>{t(`component.${info.id}`, undefined, info.name)}</h2>
           <span>{info.standard ?? info.id} · v{info.version}</span>
         </div>
+        {#key info.id}
         <ParamForm
           {info}
           params={project.params}
@@ -411,6 +513,7 @@
           onboard={(b) => (project.board = b)}
           onreset={resetParams}
         />
+        {/key}
       {/if}
     </aside>
   </div>

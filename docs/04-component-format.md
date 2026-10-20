@@ -16,7 +16,7 @@ with `pf-expr` (sandboxed: no I/O, no loops, bounded steps), and produces a `Die
 | `[[hinge]]` | Fold lines between panels with closed angle |
 | `[layout]` | Whole-design transforms, e.g. `mirror_x` |
 | `[[line]]` / `[[path]]` | Die-line entities with a line type (optional `when`) |
-| `[[repeat]]` | *Planned (Stage 5):* repeat a block with an index variable (bounded) |
+| `[[repeat]]` | *Planned:* repeat a block with an index variable (bounded) |
 
 ## 2. Expressions (`pf-expr`)
 
@@ -125,12 +125,30 @@ closed_angle = 90
 
 Optional `when = "<bool expr>"` on any `[[line]]` or `[[path]]` includes it conditionally.
 
+### Path points: corners, rounded corners and arcs
+
+Each entry of a path's `points` list is one of:
+
+| Entry | Meaning |
+|---|---|
+| `["x", "y"]` | Sharp vertex |
+| `{ at = ["x", "y"], round = "r" }` | Vertex replaced by a tangent arc of radius `r` (tuck tongues, dust flaps). Needs straight edges on both sides; the radius is reduced (with an info note) if it does not fit in half of each edge |
+| `{ to = ["x", "y"], radius = "r", ccw = true, large = false }` | Circular arc from the previous point to `to`. `ccw` and `large` pick the centre like SVG's sweep/large-arc flags; a radius smaller than half the chord is enlarged |
+
+Example (rounded tuck tongue): `R(X0 + ti, top)` → `{ at = ["X0 + ti", "yt + pW + tk"], round = "rt" }`.
+
+### Optional component metadata
+
+`default_board = "FBB-0.5"` in `[component]` suggests a board preset when the user picks the
+component (used by folding cartons).
+
 ## 5. Validation the core always runs
 
 - All param values within declared ranges; `[[rule]]` checks.
 - At least one closed cut outline with non-zero area; all coordinates finite.
+- The cut outline does not cross itself (touching at a shared vertex is allowed).
 - Every tooling line lies within the cut outline's bounds.
-- *Planned:* self-intersection and overlap checks.
+- *Planned:* overlap checks between different lines.
 - *Planned (Stage 6):* every hinge axis lies on a crease; panel graph is connected.
 - Determinism check in CI: render twice ⇒ identical output.
 

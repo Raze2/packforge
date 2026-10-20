@@ -85,12 +85,26 @@ pub(crate) struct CHinge {
     pub closed_angle: CExpr,
 }
 
+/// A compiled path entry (see `format::PathItem`).
+#[derive(Debug, Clone)]
+pub(crate) enum CItem {
+    Point(CPoint),
+    Rounded(CPoint, CExpr),
+    Arc {
+        to: CPoint,
+        radius: CExpr,
+        ccw: bool,
+        large: bool,
+    },
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct CPath {
     pub line_type: pf_model::LineType,
-    pub points: Vec<CPoint>,
+    pub points: Vec<CItem>,
     pub closed: bool,
     pub when: Option<CExpr>,
+    pub context: String,
 }
 
 /// A compiled, validated component ready to render.
@@ -254,8 +268,8 @@ fn compile(file: format::File) -> Result<Component, ComponentError> {
         paths.push(CPath {
             line_type: line_type(&l.line_type, &ctx)?,
             points: vec![
-                cpoint(&l.from, &format!("{ctx}.from"))?,
-                cpoint(&l.to, &format!("{ctx}.to"))?,
+                CItem::Point(cpoint(&l.from, &format!("{ctx}.from"))?),
+                CItem::Point(cpoint(&l.to, &format!("{ctx}.to"))?),
             ],
             closed: false,
             when: l
@@ -263,6 +277,7 @@ fn compile(file: format::File) -> Result<Component, ComponentError> {
                 .as_ref()
                 .map(|w| c(w, format!("{ctx}.when")))
                 .transpose()?,
+            context: ctx,
         });
     }
     for (i, p) in file.paths.iter().enumerate() {
@@ -270,12 +285,28 @@ fn compile(file: format::File) -> Result<Component, ComponentError> {
         if p.points.len() < 2 {
             return Err(ComponentError::invalid(ctx, "needs at least two points"));
         }
-        let points = p
-            .points
-            .iter()
-            .enumerate()
-            .map(|(j, pt)| cpoint(pt, &format!("{ctx}.points[{j}]")))
-            .collect::<Result<Vec<_>, _>>()?;
+        if matches!(p.points.first(), Some(format::PathItem::Arc(_))) {
+            return Err(ComponentError::invalid(
+                ctx,
+                "the first point cannot be an arc (an arc needs a previous point)",
+            ));
+        }
+        let mut points = Vec::with_capacity(p.points.len());
+        for (j, item) in p.points.iter().enumerate() {
+            let pctx = format!("{ctx}.points[{j}]");
+            points.push(match item {
+                format::PathItem::Point(pt) => CItem::Point(cpoint(pt, &pctx)?),
+                format::PathItem::Rounded(r) => {
+                    CItem::Rounded(cpoint(&r.at, &pctx)?, c(&r.round, format!("{pctx}.round"))?)
+                }
+                format::PathItem::Arc(a) => CItem::Arc {
+                    to: cpoint(&a.to, &pctx)?,
+                    radius: c(&a.radius, format!("{pctx}.radius"))?,
+                    ccw: a.ccw,
+                    large: a.large,
+                },
+            });
+        }
         paths.push(CPath {
             line_type: line_type(&p.line_type, &ctx)?,
             points,
@@ -285,6 +316,7 @@ fn compile(file: format::File) -> Result<Component, ComponentError> {
                 .as_ref()
                 .map(|w| c(w, format!("{ctx}.when")))
                 .transpose()?,
+            context: ctx,
         });
     }
 

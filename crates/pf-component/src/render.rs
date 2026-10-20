@@ -1,8 +1,9 @@
 //! Evaluating a compiled component for concrete parameters and board.
 
-use crate::{CExpr, CPoint, Component, ParamIssue, RenderError};
+use crate::{CExpr, CItem, CPoint, Component, ParamIssue, RenderError};
 use pf_expr::{Env, Value as EValue};
-use pf_geom::{Path, Point, Transform, EPS};
+use pf_geom::shape::{self, Node};
+use pf_geom::{Point, Transform, EPS};
 use pf_model::{Board, Diagnostic, DieLine, FoldModel, Hinge, LineType, Panel, Severity, Value};
 use std::collections::BTreeMap;
 
@@ -124,12 +125,39 @@ impl Component {
                     continue;
                 }
             }
-            let pts = p
-                .points
-                .iter()
-                .map(|pt| scope.point(pt))
-                .collect::<Result<Vec<_>, _>>()?;
-            let path = Path::polyline(&pts, p.closed);
+            let mut nodes = Vec::with_capacity(p.points.len());
+            for item in &p.points {
+                nodes.push(match item {
+                    CItem::Point(pt) => Node::Corner {
+                        p: scope.point(pt)?,
+                        round: 0.0,
+                    },
+                    CItem::Rounded(pt, r) => Node::Corner {
+                        p: scope.point(pt)?,
+                        round: scope.num(r)?,
+                    },
+                    CItem::Arc {
+                        to,
+                        radius,
+                        ccw,
+                        large,
+                    } => Node::ArcTo {
+                        p: scope.point(to)?,
+                        radius: scope.num(radius)?,
+                        ccw: *ccw,
+                        large: *large,
+                    },
+                });
+            }
+            let built = shape::build(&nodes, p.closed).map_err(|message| RenderError::Eval {
+                context: p.context.clone(),
+                message,
+            })?;
+            diagnostics.extend(built.notes.into_iter().map(|n| Diagnostic {
+                severity: Severity::Info,
+                message: format!("{}: {n}", p.context),
+            }));
+            let path = built.path;
             if path.segments.is_empty() {
                 diagnostics.push(Diagnostic {
                     severity: Severity::Info,
@@ -233,6 +261,12 @@ fn check_geometry(d: &DieLine) -> Result<(), RenderError> {
         }
         if o.path.signed_area().abs() <= EPS {
             return Err(RenderError::Geometry("cut outline has zero area".into()));
+        }
+        let crossings = o.path.self_crossings();
+        if crossings > 0 {
+            return Err(RenderError::Geometry(format!(
+                "cut outline crosses itself ({crossings} place(s)); check the dimensions"
+            )));
         }
     }
     // Every tooling line must lie within the outer cut outline's bounds.

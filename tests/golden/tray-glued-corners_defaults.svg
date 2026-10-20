@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="434.8mm" height="334.8mm" viewBox="0 0 434.8 334.8">
+  <title>tray-glued-corners — E-flute</title>
+  <g id="cut" class="pf-cut" fill="none" stroke="#1d1d1f" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 268.2L5 66.6L66.6 66.6L66.6 65L36.6 65L36.6 14.6L44.6 6.6L66.6 6.6L66.6 5L368.2 5L368.2 6.6L390.2 6.6L398.2 14.6L398.2 65L368.2 65L368.2 66.6L429.8 66.6L429.8 268.2L368.2 268.2L368.2 269.8L398.2 269.8L398.2 320.2L390.2 328.2L368.2 328.2L368.2 329.8L66.6 329.8L66.6 328.2L44.6 328.2L36.6 320.2L36.6 269.8L66.6 269.8L66.6 268.2L5 268.2Z"/>
+  </g>
+  <g id="crease" class="pf-crease" fill="none" stroke="#d0021b" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 3">
+    <path d="M66.6 268.2L368.2 268.2"/>
+    <path d="M66.6 66.6L368.2 66.6"/>
+    <path d="M66.6 268.2L66.6 66.6"/>
+    <path d="M368.2 268.2L368.2 66.6"/>
+    <path d="M66.6 65L66.6 6.6"/>
+    <path d="M368.2 65L368.2 6.6"/>
+    <path d="M66.6 328.2L66.6 269.8"/>
+    <path d="M368.2 328.2L368.2 269.8"/>
+  </g>
+</svg>

@@ -109,7 +109,14 @@ on the dev machine — CI builds and smoke-tests it).
 **Done when:** a sample Laravel app generates and stores a DXF per order via a queued job,
 and embeds the designer with `<x-packforge-designer>`.
 
-## Stage 4 — Desktop app (S–M)
+## Stage 4 — Desktop app (S–M) — ✅ done (macOS built locally; Windows/Linux installers via CI)
+
+Status: Tauri 2 shell (`apps/desktop`) around the web designer, with native open/save/save-as
+dialogs, `.pfproj` file association, recent files, a native menu with shortcuts, drag-and-drop,
+unsaved-changes prompt on close, window title with the document name, and native exports through
+`pf-core`. `.github/workflows/desktop.yml` builds unsigned installers for all three OSes.
+Code signing and auto-update move to Stage 10.
+
 
 - Tauri 2 shell loading `apps/web`; native file open/save, recent files, menus, drag-drop.
 - Use native `pf-core` via Tauri commands for heavy exports; WASM for live preview.
@@ -117,7 +124,15 @@ and embeds the designer with `<x-packforge-designer>`.
 
 **Done when:** installers produced by CI for all three OSes open and export a design.
 
-## Stage 5 — Library expansion (L, ongoing)
+## Stage 5 — Library expansion (L, ongoing) — 🟡 first batch done (9 styles)
+
+Status: rounded corners and arcs in the component format; outline self-crossing check; library-
+wide tests (every style at defaults and across parameter extremes on three boards: no notes,
+hinges on creases, connected panels, blank formulas). Styles: FEFCO 0200, 0201, 0202, 0203, 0204,
+sleeve, glued-corner tray, straight and reverse tuck end cartons. Still to do from the list below:
+0215, 0300/0310 telescope boxes, 0409, 0421/0427 die-cut mailers, crash-lock bottom, board presets
+for more grades, and physical sample verification of each style.
+
 
 - Priority styles: FEFCO 0200, 0201, 0202, 0203, 0204, 0215, 0300, 0310, 0320, 0409, 0421,
   0427; ECMA A20.20.03.01 (reverse tuck end), straight tuck end, crash-lock bottom, sleeve, tray.

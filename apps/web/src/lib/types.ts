@@ -134,6 +134,8 @@ export interface ComponentInfo {
   tier: Tier;
   dimension_reference?: string;
   description?: string;
+  /** Board preset suggested for this component (e.g. folding boxboard for cartons). */
+  default_board?: string;
   params: ParamDef[];
 }
 

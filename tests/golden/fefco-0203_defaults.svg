@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1061mm" height="576mm" viewBox="0 0 1061 576">
+  <title>fefco-0203 — C-flute</title>
+  <g id="cut" class="pf-cut" fill="none" stroke="#1d1d1f" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 352L5 224L40 209L43 209L43 5L341 5L341 209L347 209L347 5L545 5L545 209L551 209L551 5L849 5L849 209L855 209L855 5L1053 5L1053 209L1056 209L1056 367L1053 367L1053 571L855 571L855 367L849 367L849 571L551 571L551 367L545 367L545 571L347 571L347 367L341 367L341 571L43 571L43 367L40 367L5 352Z"/>
+  </g>
+  <g id="crease" class="pf-crease" fill="none" stroke="#d0021b" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 3">
+    <path d="M40 367L40 209"/>
+    <path d="M344 367L344 209"/>
+    <path d="M548 367L548 209"/>
+    <path d="M852 367L852 209"/>
+    <path d="M43 367L341 367"/>
+    <path d="M347 367L545 367"/>
+    <path d="M551 367L849 367"/>
+    <path d="M855 367L1053 367"/>
+    <path d="M43 209L341 209"/>
+    <path d="M347 209L545 209"/>
+    <path d="M551 209L849 209"/>
+    <path d="M855 209L1053 209"/>
+  </g>
+</svg>

@@ -30,7 +30,9 @@
   let errors: Record<string, string> = $state({});
 
   const isLength = (p: ParamDef) => p.type === 'length';
-  const label = (p: ParamDef) => t(`param.${info.id}.${p.id}`, undefined, p.label);
+  // Component-specific label first, then a shared label for common ids (L, W, H…).
+  const label = (p: ParamDef) =>
+    t(`param.${info.id}.${p.id}`, undefined, t(`param.${p.id}`, undefined, p.label));
   const current = (p: ParamDef): ParamValue => params[p.id] ?? p.default;
 
   function shown(p: ParamDef): number {

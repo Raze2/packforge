@@ -41,8 +41,32 @@ fn check(name: &str, actual: &[u8]) {
     );
 }
 
+fn defaults(id: &str, board: &str) -> Project {
+    Project {
+        component_id: id.into(),
+        ..project(&[], board)
+    }
+}
+
 fn cases() -> Vec<(&'static str, Project)> {
     vec![
+        ("fefco-0200_defaults", defaults("fefco-0200", "C-flute")),
+        ("fefco-0202_defaults", defaults("fefco-0202", "C-flute")),
+        ("fefco-0203_defaults", defaults("fefco-0203", "C-flute")),
+        ("fefco-0204_defaults", defaults("fefco-0204", "C-flute")),
+        ("sleeve_defaults", defaults("sleeve", "B-flute")),
+        (
+            "tray-glued-corners_defaults",
+            defaults("tray-glued-corners", "E-flute"),
+        ),
+        (
+            "tuck-end-straight_defaults",
+            defaults("tuck-end-straight", "FBB-0.5"),
+        ),
+        (
+            "tuck-end-reverse_defaults",
+            defaults("tuck-end-reverse", "FBB-0.5"),
+        ),
         (
             "fefco-0201_300x200x150_C",
             project(

@@ -1,0 +1,167 @@
+# Sleeve — four-panel tube with a glue flap, open at both ends.
+# Used as an outer wrap or a band. Allowances are NOMINAL; verify with samples.
+
+[component]
+id = "sleeve"
+version = "0.1.0"
+name = "Sleeve"
+category = "09-sleeves"
+tier = "free"
+dimension_reference = "inside"
+description = "Four-panel tube open at both ends, glued along one edge."
+
+[[param]]
+id = "L"
+label = "Inside length"
+type = "length"
+default = 300
+min = 30
+max = 2500
+group = "Dimensions"
+
+[[param]]
+id = "W"
+label = "Inside width"
+type = "length"
+default = 200
+min = 30
+max = 2500
+group = "Dimensions"
+
+[[param]]
+id = "H"
+label = "Sleeve depth"
+type = "length"
+default = 150
+min = 20
+max = 2500
+group = "Dimensions"
+
+[[param]]
+id = "glue_width"
+label = "Glue flap width"
+type = "length"
+default = 35
+min = 10
+max = 60
+group = "Construction"
+
+[[param]]
+id = "glue_side"
+label = "Glue flap side"
+type = "enum"
+values = ["left", "right"]
+default = "left"
+group = "Construction"
+
+[derived]
+t = "board.caliper"
+pL = "L + t"
+pW = "W + t"
+pH = "H"
+g = "glue_width"
+taper = "min(g, 15mm, pH / 4)"
+X0 = "g"
+X1 = "X0 + pL"
+X2 = "X1 + pW"
+X3 = "X2 + pL"
+X4 = "X3 + pW"
+
+[[rule]]
+when = "W > L"
+level = "warning"
+message = "Width is larger than length; length is normally the longer side."
+
+[layout]
+mirror_x = "glue_side == 'right'"
+
+[[path]]
+type = "cut"
+closed = true
+points = [
+  ["0", "taper"],
+  ["0", "pH - taper"],
+  ["X0", "pH"],
+  ["X4", "pH"],
+  ["X4", "0"],
+  ["X0", "0"],
+]
+
+[[line]]
+type = "crease"
+from = ["X0", "0"]
+to = ["X0", "pH"]
+
+[[line]]
+type = "crease"
+from = ["X1", "0"]
+to = ["X1", "pH"]
+
+[[line]]
+type = "crease"
+from = ["X2", "0"]
+to = ["X2", "pH"]
+
+[[line]]
+type = "crease"
+from = ["X3", "0"]
+to = ["X3", "pH"]
+
+[[panel]]
+id = "glue"
+x = "0"
+y = "0"
+w = "g"
+h = "pH"
+
+[[panel]]
+id = "side1"
+x = "X0"
+y = "0"
+w = "pL"
+h = "pH"
+
+[[panel]]
+id = "end1"
+x = "X1"
+y = "0"
+w = "pW"
+h = "pH"
+
+[[panel]]
+id = "side2"
+x = "X2"
+y = "0"
+w = "pL"
+h = "pH"
+
+[[panel]]
+id = "end2"
+x = "X3"
+y = "0"
+w = "pW"
+h = "pH"
+
+[[hinge]]
+a = "side1"
+b = "glue"
+axis = ["X0", "0", "X0", "pH"]
+closed_angle = 90
+
+[[hinge]]
+a = "side1"
+b = "end1"
+axis = ["X1", "0", "X1", "pH"]
+closed_angle = 90
+
+[[hinge]]
+a = "end1"
+b = "side2"
+axis = ["X2", "0", "X2", "pH"]
+closed_angle = 90
+
+[[hinge]]
+a = "side2"
+b = "end2"
+axis = ["X3", "0", "X3", "pH"]
+closed_angle = 90

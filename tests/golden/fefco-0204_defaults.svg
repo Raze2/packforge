@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1061mm" height="472mm" viewBox="0 0 1061 472">
+  <title>fefco-0204 — C-flute</title>
+  <g id="cut" class="pf-cut" fill="none" stroke="#1d1d1f" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 300L5 172L40 157L43 157L43 55L341 55L341 157L347 157L347 5L545 5L545 157L551 157L551 55L849 55L849 157L855 157L855 5L1053 5L1053 157L1056 157L1056 315L1053 315L1053 467L855 467L855 315L849 315L849 417L551 417L551 315L545 315L545 467L347 467L347 315L341 315L341 417L43 417L43 315L40 315L5 300Z"/>
+  </g>
+  <g id="crease" class="pf-crease" fill="none" stroke="#d0021b" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 3">
+    <path d="M40 315L40 157"/>
+    <path d="M344 315L344 157"/>
+    <path d="M548 315L548 157"/>
+    <path d="M852 315L852 157"/>
+    <path d="M43 315L341 315"/>
+    <path d="M347 315L545 315"/>
+    <path d="M551 315L849 315"/>
+    <path d="M855 315L1053 315"/>
+    <path d="M43 157L341 157"/>
+    <path d="M347 157L545 157"/>
+    <path d="M551 157L849 157"/>
+    <path d="M855 157L1053 157"/>
+  </g>
+</svg>

@@ -3,6 +3,8 @@
 use serde::{Deserialize, Serialize};
 use std::f64::consts::TAU;
 
+pub mod shape;
+
 /// Tolerance used for geometric equality (mm).
 pub const EPS: f64 = 1e-6;
 
@@ -156,6 +158,20 @@ impl Segment {
     }
 }
 
+/// True when two segments intersect at a single interior point of both (a proper crossing).
+fn segments_cross((a, b): (Point, Point), (c, d): (Point, Point)) -> bool {
+    let orient =
+        |p: Point, q: Point, r: Point| (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
+    let eps = 1e-9;
+    let (o1, o2, o3, o4) = (
+        orient(a, b, c),
+        orient(a, b, d),
+        orient(c, d, a),
+        orient(c, d, b),
+    );
+    o1 * o2 < -eps && o3 * o4 < -eps
+}
+
 fn polar(center: Point, radius: f64, angle: f64) -> Point {
     Point::new(
         center.x + radius * angle.cos(),
@@ -225,16 +241,71 @@ impl Path {
         connected && loop_ok
     }
 
-    /// Signed area for closed paths made of lines (shoelace; arcs approximated by chords).
+    /// Signed area of a closed path (positive = counter-clockwise): shoelace over the chords
+    /// plus the exact circular-segment area of every arc.
     pub fn signed_area(&self) -> f64 {
         self.segments
             .iter()
             .map(|s| {
                 let (a, b) = (s.start_point(), s.end_point());
-                a.x * b.y - b.x * a.y
+                let chord = (a.x * b.y - b.x * a.y) / 2.0;
+                match *s {
+                    Segment::Line { .. } => chord,
+                    Segment::Arc { radius, sweep, .. } => {
+                        chord + 0.5 * radius * radius * (sweep - sweep.sin())
+                    }
+                }
             })
-            .sum::<f64>()
-            / 2.0
+            .sum()
+    }
+
+    /// Points along the path; arcs are split so that the chord error stays below `tolerance`.
+    pub fn flatten(&self, tolerance: f64) -> Vec<Point> {
+        let mut pts = Vec::new();
+        for s in &self.segments {
+            if pts.is_empty() {
+                pts.push(s.start_point());
+            }
+            match *s {
+                Segment::Line { to, .. } => pts.push(to),
+                Segment::Arc {
+                    center,
+                    radius,
+                    start,
+                    sweep,
+                } => {
+                    let max_step = 2.0 * (1.0 - tolerance.min(radius) / radius).acos().max(1e-3);
+                    let n = ((sweep.abs() / max_step).ceil() as usize).clamp(1, 512);
+                    for i in 1..=n {
+                        pts.push(polar(center, radius, start + sweep * i as f64 / n as f64));
+                    }
+                }
+            }
+        }
+        pts
+    }
+
+    /// Number of places where the path properly crosses itself (touching at a shared vertex is
+    /// allowed). Uses a flattened copy for arcs.
+    pub fn self_crossings(&self) -> usize {
+        let mut pts = self.flatten(0.05);
+        if self.closed && pts.len() > 2 && !pts[0].approx_eq(pts[pts.len() - 1]) {
+            pts.push(pts[0]);
+        }
+        let segs: Vec<(Point, Point)> = pts.windows(2).map(|w| (w[0], w[1])).collect();
+        let n = segs.len();
+        let mut count = 0;
+        for i in 0..n {
+            for j in (i + 2)..n {
+                if self.closed && i == 0 && j == n - 1 {
+                    continue; // first and last segment are adjacent in a closed path
+                }
+                if segments_cross(segs[i], segs[j]) {
+                    count += 1;
+                }
+            }
+        }
+        count
     }
 
     pub fn transform(&self, t: &Transform) -> Path {
@@ -369,6 +440,60 @@ mod tests {
         assert!((p.signed_area() - 12.0).abs() < 1e-9);
         let b = p.bbox();
         assert_eq!((b.width(), b.height()), (4.0, 3.0));
+    }
+
+    #[test]
+    fn area_of_rounded_rectangle_is_exact() {
+        let r = 2.0;
+        let nodes =
+            [(0.0, 0.0), (10.0, 0.0), (10.0, 6.0), (0.0, 6.0)].map(|(x, y)| shape::Node::Corner {
+                p: Point::new(x, y),
+                round: r,
+            });
+        let p = shape::build(&nodes, true).expect("build").path;
+        let exact = 60.0 - (4.0 - PI) * r * r;
+        assert!(
+            (p.signed_area() - exact).abs() < 1e-9,
+            "{}",
+            p.signed_area()
+        );
+    }
+
+    #[test]
+    fn detects_self_crossing_bowtie() {
+        let bowtie = Path::polyline(
+            &[
+                Point::new(0.0, 0.0),
+                Point::new(10.0, 10.0),
+                Point::new(10.0, 0.0),
+                Point::new(0.0, 10.0),
+            ],
+            true,
+        );
+        assert_eq!(bowtie.self_crossings(), 1);
+        let square = Path::polyline(
+            &[
+                Point::new(0.0, 0.0),
+                Point::new(10.0, 0.0),
+                Point::new(10.0, 10.0),
+                Point::new(0.0, 10.0),
+            ],
+            true,
+        );
+        assert_eq!(square.self_crossings(), 0);
+        // Touching at a shared vertex (a "pinch") is not a crossing.
+        let pinch = Path::polyline(
+            &[
+                Point::new(0.0, 0.0),
+                Point::new(4.0, 4.0),
+                Point::new(8.0, 0.0),
+                Point::new(8.0, 8.0),
+                Point::new(4.0, 4.0),
+                Point::new(0.0, 8.0),
+            ],
+            true,
+        );
+        assert_eq!(pinch.self_crossings(), 0);
     }
 
     #[test]

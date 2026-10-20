@@ -58,6 +58,9 @@ pub struct Meta {
     pub dimension_reference: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    /// Board preset suggested when a user picks this component (e.g. folding boxboard).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_board: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -190,9 +193,40 @@ pub(crate) struct LineDef {
 pub(crate) struct PathDef {
     #[serde(rename = "type")]
     pub line_type: String,
-    pub points: Vec<[ExprSrc; 2]>,
+    pub points: Vec<PathItem>,
     #[serde(default)]
     pub closed: bool,
     #[serde(default)]
     pub when: Option<ExprSrc>,
+}
+
+/// One entry of a path's `points` list.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub(crate) enum PathItem {
+    /// `["x", "y"]` — a sharp vertex.
+    Point([ExprSrc; 2]),
+    /// `{ at = ["x", "y"], round = "r" }` — a vertex rounded with a tangent arc of radius r.
+    Rounded(RoundedDef),
+    /// `{ to = ["x", "y"], radius = "r", ccw = true, large = false }` — circular arc from the
+    /// previous point to `to` (SVG-style: direction and large/small arc choose the centre).
+    Arc(ArcDef),
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct RoundedDef {
+    pub at: [ExprSrc; 2],
+    pub round: ExprSrc,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ArcDef {
+    pub to: [ExprSrc; 2],
+    pub radius: ExprSrc,
+    #[serde(default)]
+    pub ccw: bool,
+    #[serde(default)]
+    pub large: bool,
 }

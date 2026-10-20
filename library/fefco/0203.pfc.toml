@@ -1,0 +1,369 @@
+# FEFCO 0203 — Full overlap slotted container
+#
+# Generated layout (glue flap on the left; mirrored when glue_side = "right"):
+# four body panels side1 | end1 | side2 | end2 with top and bottom flaps.
+# Side-panel flaps are fS high, end-panel flaps fE high.
+#
+# Allowances are NOMINAL starting values (inside dimensions + one caliper per panel,
+# two calipers on the depth). Verify against physical samples before marking stable.
+
+[component]
+id = "fefco-0203"
+version = "0.1.0"
+name = "Full overlap slotted container"
+standard = "FEFCO 0203"
+category = "02-slotted"
+tier = "premium"
+dimension_reference = "inside"
+description = "Slotted box whose outer flaps each span the full width for extra stacking strength."
+
+[[param]]
+id = "L"
+label = "Inside length"
+type = "length"
+default = 300
+min = 40
+max = 2500
+group = "Dimensions"
+
+[[param]]
+id = "W"
+label = "Inside width"
+type = "length"
+default = 200
+min = 40
+max = 2500
+group = "Dimensions"
+
+[[param]]
+id = "H"
+label = "Inside height"
+type = "length"
+default = 150
+min = 20
+max = 2500
+group = "Dimensions"
+
+[[param]]
+id = "glue_width"
+label = "Glue flap width"
+type = "length"
+default = 35
+min = 15
+max = 60
+group = "Construction"
+
+[[param]]
+id = "glue_side"
+label = "Glue flap side"
+type = "enum"
+values = ["left", "right"]
+default = "left"
+group = "Construction"
+
+[derived]
+t = "board.caliper"
+pL = "L + t"                    # length panel width (crease to crease)
+pW = "W + t"                    # width panel width
+pH = "H + 2 * t"                # body height (score to score)
+s = "max(1.5 * t, 5mm)"         # slot width between flaps
+hs = "s / 2"
+g = "glue_width"
+taper = "min(g, 15mm, pH / 4)"  # chamfer on the glue flap ends
+X0 = "g"
+X1 = "X0 + pL"
+X2 = "X1 + pW"
+X3 = "X2 + pL"
+X4 = "X3 + pW"
+fmax = "max(fS, fE)"
+yb = "fmax"                     # bottom score line
+yt = "yb + pH"                  # top score line
+bS = "yb - fS"                  # bottom edge of side-panel flaps
+bE = "yb - fE"                  # bottom edge of end-panel flaps
+tS = "yt + fS"                  # top edge of side-panel flaps
+tE = "yt + fE"                  # top edge of end-panel flaps
+fS = "pW"                     # flaps span the full width
+fE = "pW"
+
+[[rule]]
+when = "W > L"
+level = "warning"
+message = "Width is larger than length; length is normally the longer side."
+
+[[rule]]
+when = "pW > pL"
+level = "warning"
+message = "Full-width flaps are longer than the length panel; check the end flaps clear each other."
+
+[layout]
+mirror_x = "glue_side == 'right'"
+
+# ── Cut outline ──
+[[path]]
+type = "cut"
+closed = true
+points = [
+  ["0", "yb + taper"],
+  ["0", "yt - taper"],
+  ["X0", "yt"],
+  ["X0 + hs", "yt"],
+  ["X0 + hs", "tS"],
+  ["X1 - hs", "tS"],
+  ["X1 - hs", "yt"],
+  ["X1 + hs", "yt"],
+  ["X1 + hs", "tE"],
+  ["X2 - hs", "tE"],
+  ["X2 - hs", "yt"],
+  ["X2 + hs", "yt"],
+  ["X2 + hs", "tS"],
+  ["X3 - hs", "tS"],
+  ["X3 - hs", "yt"],
+  ["X3 + hs", "yt"],
+  ["X3 + hs", "tE"],
+  ["X4 - hs", "tE"],
+  ["X4 - hs", "yt"],
+  ["X4", "yt"],
+  ["X4", "yb"],
+  ["X4 - hs", "yb"],
+  ["X4 - hs", "bE"],
+  ["X3 + hs", "bE"],
+  ["X3 + hs", "yb"],
+  ["X3 - hs", "yb"],
+  ["X3 - hs", "bS"],
+  ["X2 + hs", "bS"],
+  ["X2 + hs", "yb"],
+  ["X2 - hs", "yb"],
+  ["X2 - hs", "bE"],
+  ["X1 + hs", "bE"],
+  ["X1 + hs", "yb"],
+  ["X1 - hs", "yb"],
+  ["X1 - hs", "bS"],
+  ["X0 + hs", "bS"],
+  ["X0 + hs", "yb"],
+  ["X0", "yb"],
+]
+
+# ── Creases ──
+[[line]]
+type = "crease"
+from = ["X0", "yb"]
+to = ["X0", "yt"]
+
+[[line]]
+type = "crease"
+from = ["X1", "yb"]
+to = ["X1", "yt"]
+
+[[line]]
+type = "crease"
+from = ["X2", "yb"]
+to = ["X2", "yt"]
+
+[[line]]
+type = "crease"
+from = ["X3", "yb"]
+to = ["X3", "yt"]
+
+[[line]]
+type = "crease"
+from = ["X0 + hs", "yb"]
+to = ["X1 - hs", "yb"]
+
+[[line]]
+type = "crease"
+from = ["X1 + hs", "yb"]
+to = ["X2 - hs", "yb"]
+
+[[line]]
+type = "crease"
+from = ["X2 + hs", "yb"]
+to = ["X3 - hs", "yb"]
+
+[[line]]
+type = "crease"
+from = ["X3 + hs", "yb"]
+to = ["X4 - hs", "yb"]
+
+[[line]]
+type = "crease"
+from = ["X0 + hs", "yt"]
+to = ["X1 - hs", "yt"]
+
+[[line]]
+type = "crease"
+from = ["X1 + hs", "yt"]
+to = ["X2 - hs", "yt"]
+
+[[line]]
+type = "crease"
+from = ["X2 + hs", "yt"]
+to = ["X3 - hs", "yt"]
+
+[[line]]
+type = "crease"
+from = ["X3 + hs", "yt"]
+to = ["X4 - hs", "yt"]
+
+# ── Panels and hinges ──
+[[panel]]
+id = "glue"
+x = "0"
+y = "yb"
+w = "g"
+h = "pH"
+
+[[panel]]
+id = "side1"
+x = "X0"
+y = "yb"
+w = "pL"
+h = "pH"
+
+[[panel]]
+id = "end1"
+x = "X1"
+y = "yb"
+w = "pW"
+h = "pH"
+
+[[panel]]
+id = "side2"
+x = "X2"
+y = "yb"
+w = "pL"
+h = "pH"
+
+[[panel]]
+id = "end2"
+x = "X3"
+y = "yb"
+w = "pW"
+h = "pH"
+
+[[panel]]
+id = "b1"
+x = "X0 + hs"
+y = "yb - fS"
+w = "pL - s"
+h = "fS"
+
+[[panel]]
+id = "t1"
+x = "X0 + hs"
+y = "yt"
+w = "pL - s"
+h = "fS"
+
+[[panel]]
+id = "b2"
+x = "X1 + hs"
+y = "yb - fE"
+w = "pW - s"
+h = "fE"
+
+[[panel]]
+id = "t2"
+x = "X1 + hs"
+y = "yt"
+w = "pW - s"
+h = "fE"
+
+[[panel]]
+id = "b3"
+x = "X2 + hs"
+y = "yb - fS"
+w = "pL - s"
+h = "fS"
+
+[[panel]]
+id = "t3"
+x = "X2 + hs"
+y = "yt"
+w = "pL - s"
+h = "fS"
+
+[[panel]]
+id = "b4"
+x = "X3 + hs"
+y = "yb - fE"
+w = "pW - s"
+h = "fE"
+
+[[panel]]
+id = "t4"
+x = "X3 + hs"
+y = "yt"
+w = "pW - s"
+h = "fE"
+
+[[hinge]]
+a = "side1"
+b = "glue"
+axis = ["X0", "yb", "X0", "yt"]
+closed_angle = 90
+
+[[hinge]]
+a = "side1"
+b = "end1"
+axis = ["X1", "yb", "X1", "yt"]
+closed_angle = 90
+
+[[hinge]]
+a = "end1"
+b = "side2"
+axis = ["X2", "yb", "X2", "yt"]
+closed_angle = 90
+
+[[hinge]]
+a = "side2"
+b = "end2"
+axis = ["X3", "yb", "X3", "yt"]
+closed_angle = 90
+
+[[hinge]]
+a = "side1"
+b = "b1"
+axis = ["X0 + hs", "yb", "X1 - hs", "yb"]
+closed_angle = 90
+
+[[hinge]]
+a = "side1"
+b = "t1"
+axis = ["X0 + hs", "yt", "X1 - hs", "yt"]
+closed_angle = 90
+
+[[hinge]]
+a = "end1"
+b = "b2"
+axis = ["X1 + hs", "yb", "X2 - hs", "yb"]
+closed_angle = 90
+
+[[hinge]]
+a = "end1"
+b = "t2"
+axis = ["X1 + hs", "yt", "X2 - hs", "yt"]
+closed_angle = 90
+
+[[hinge]]
+a = "side2"
+b = "b3"
+axis = ["X2 + hs", "yb", "X3 - hs", "yb"]
+closed_angle = 90
+
+[[hinge]]
+a = "side2"
+b = "t3"
+axis = ["X2 + hs", "yt", "X3 - hs", "yt"]
+closed_angle = 90
+
+[[hinge]]
+a = "end2"
+b = "b4"
+axis = ["X3 + hs", "yb", "X4 - hs", "yb"]
+closed_angle = 90
+
+[[hinge]]
+a = "end2"
+b = "t4"
+axis = ["X3 + hs", "yt", "X4 - hs", "yt"]
+closed_angle = 90

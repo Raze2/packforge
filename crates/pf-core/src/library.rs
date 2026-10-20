@@ -6,10 +6,44 @@ use pf_model::Board;
 use std::sync::OnceLock;
 
 /// `(id, TOML source)` of every built-in component.
-pub const BUILTIN_COMPONENTS: &[(&str, &str)] = &[(
-    "fefco-0201",
-    include_str!("../../../library/fefco/0201.pfc.toml"),
-)];
+pub const BUILTIN_COMPONENTS: &[(&str, &str)] = &[
+    (
+        "fefco-0200",
+        include_str!("../../../library/fefco/0200.pfc.toml"),
+    ),
+    (
+        "fefco-0201",
+        include_str!("../../../library/fefco/0201.pfc.toml"),
+    ),
+    (
+        "fefco-0202",
+        include_str!("../../../library/fefco/0202.pfc.toml"),
+    ),
+    (
+        "fefco-0203",
+        include_str!("../../../library/fefco/0203.pfc.toml"),
+    ),
+    (
+        "fefco-0204",
+        include_str!("../../../library/fefco/0204.pfc.toml"),
+    ),
+    (
+        "sleeve",
+        include_str!("../../../library/sleeves/sleeve.pfc.toml"),
+    ),
+    (
+        "tray-glued-corners",
+        include_str!("../../../library/trays/tray-glued-corners.pfc.toml"),
+    ),
+    (
+        "tuck-end-straight",
+        include_str!("../../../library/cartons/tuck-end-straight.pfc.toml"),
+    ),
+    (
+        "tuck-end-reverse",
+        include_str!("../../../library/cartons/tuck-end-reverse.pfc.toml"),
+    ),
+];
 
 static COMPILED: OnceLock<Result<Vec<Component>, CoreError>> = OnceLock::new();
 

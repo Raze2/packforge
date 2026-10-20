@@ -5,8 +5,9 @@ exports and pallet optimisation — from **one Rust core** running in the **brow
 on the **desktop (Windows / macOS / Linux, via Tauri)**, and as an **HTTP API** for
 **Laravel/PHP** and other projects.
 
-> Status: Stage 3 — core engine, FEFCO 0201, SVG/DXF export, CLI, web designer,
-> `<packforge-designer>` web component, HTTP API and Laravel package working.
+> Status: Stages 0–5 — core engine, 9 box styles (FEFCO 0200–0204, sleeve, tray, tuck-end
+> cartons), SVG/DXF export, CLI, web designer, `<packforge-designer>` web component, HTTP API,
+> Laravel package and the desktop app (Tauri) working.
 
 ## Quick start
 
@@ -20,6 +21,10 @@ cargo build -p pf-wasm --target wasm32-unknown-unknown --release
 pnpm install
 pnpm dev        # http://localhost:5173 and /embed-demo.html
 pnpm build:web  # dist/app and dist/wc/packforge-designer.js
+
+# Desktop app (Tauri)
+pnpm --dir apps/desktop dev     # opens the native window with hot reload
+pnpm --dir apps/desktop build   # installers in apps/desktop/src-tauri/target/release/bundle
 
 # HTTP API
 cargo run -p pf-api -- gen-key --id local-dev --prefix pk_test   # prints a secret + keys.toml entry

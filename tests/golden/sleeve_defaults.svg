@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1057mm" height="160mm" viewBox="0 0 1057 160">
+  <title>sleeve — B-flute</title>
+  <g id="cut" class="pf-cut" fill="none" stroke="#1d1d1f" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 140L5 20L40 5L1052 5L1052 155L40 155L5 140Z"/>
+  </g>
+  <g id="crease" class="pf-crease" fill="none" stroke="#d0021b" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 3">
+    <path d="M40 155L40 5"/>
+    <path d="M343 155L343 5"/>
+    <path d="M546 155L546 5"/>
+    <path d="M849 155L849 5"/>
+  </g>
+</svg>

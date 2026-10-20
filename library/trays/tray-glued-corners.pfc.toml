@@ -1,0 +1,264 @@
+# Glued-corner tray — open four-wall tray. The corner flaps on the side walls fold onto the
+# inside of the end walls and are glued. Allowances are NOMINAL; verify with samples.
+
+[component]
+id = "tray-glued-corners"
+version = "0.1.0"
+name = "Tray with glued corners"
+category = "04-trays"
+tier = "premium"
+dimension_reference = "inside"
+description = "Open tray: base, four walls, and corner flaps glued to the end walls."
+
+[[param]]
+id = "L"
+label = "Inside length"
+type = "length"
+default = 300
+min = 40
+max = 2000
+group = "Dimensions"
+
+[[param]]
+id = "W"
+label = "Inside width"
+type = "length"
+default = 200
+min = 40
+max = 2000
+group = "Dimensions"
+
+[[param]]
+id = "H"
+label = "Wall height"
+type = "length"
+default = 60
+min = 10
+max = 1000
+group = "Dimensions"
+
+[[param]]
+id = "corner_flap"
+label = "Corner flap width"
+type = "length"
+default = 30
+min = 10
+max = 400
+group = "Construction"
+
+
+[derived]
+t = "board.caliper"
+pL = "L + t"                  # base length
+pW = "W + t"                  # base width
+pH = "H + t"                  # wall height
+gw = "corner_flap"
+c = "max(t, 1mm)"             # clearance so flaps sit below the wall top and clear the base
+tp = "min(gw / 2, (pH - 2 * c) / 3, 8mm)"   # chamfer on the flap's outer corner
+X0 = "pH"
+X1 = "X0 + pL"
+Y0 = "pH"
+Y1 = "Y0 + pW"
+
+[[rule]]
+when = "2 * gw > pW"
+level = "error"
+message = "Corner flaps are too wide: two flaps meet on each end wall, so each must be at most half the width."
+
+[[rule]]
+when = "pH < 3 * c + 3mm"
+level = "error"
+message = "Walls are too low for corner flaps."
+
+# ── Cut outline ──
+[[path]]
+type = "cut"
+closed = true
+points = [
+  ["0", "Y0"],
+  ["0", "Y1"],
+  ["X0", "Y1"],
+  ["X0", "Y1 + c"],
+  ["X0 - gw", "Y1 + c"],
+  ["X0 - gw", "Y1 + pH - c - tp"],
+  ["X0 - gw + tp", "Y1 + pH - c"],
+  ["X0", "Y1 + pH - c"],
+  ["X0", "Y1 + pH"],
+  ["X1", "Y1 + pH"],
+  ["X1", "Y1 + pH - c"],
+  ["X1 + gw - tp", "Y1 + pH - c"],
+  ["X1 + gw", "Y1 + pH - c - tp"],
+  ["X1 + gw", "Y1 + c"],
+  ["X1", "Y1 + c"],
+  ["X1", "Y1"],
+  ["X1 + pH", "Y1"],
+  ["X1 + pH", "Y0"],
+  ["X1", "Y0"],
+  ["X1", "Y0 - c"],
+  ["X1 + gw", "Y0 - c"],
+  ["X1 + gw", "Y0 - pH + c + tp"],
+  ["X1 + gw - tp", "Y0 - pH + c"],
+  ["X1", "Y0 - pH + c"],
+  ["X1", "Y0 - pH"],
+  ["X0", "Y0 - pH"],
+  ["X0", "Y0 - pH + c"],
+  ["X0 - gw + tp", "Y0 - pH + c"],
+  ["X0 - gw", "Y0 - pH + c + tp"],
+  ["X0 - gw", "Y0 - c"],
+  ["X0", "Y0 - c"],
+  ["X0", "Y0"],
+]
+
+# ── Creases: base edges ──
+[[line]]
+type = "crease"
+from = ["X0", "Y0"]
+to = ["X1", "Y0"]
+
+[[line]]
+type = "crease"
+from = ["X0", "Y1"]
+to = ["X1", "Y1"]
+
+[[line]]
+type = "crease"
+from = ["X0", "Y0"]
+to = ["X0", "Y1"]
+
+[[line]]
+type = "crease"
+from = ["X1", "Y0"]
+to = ["X1", "Y1"]
+
+# ── Creases: corner flaps ──
+[[line]]
+type = "crease"
+from = ["X0", "Y1 + c"]
+to = ["X0", "Y1 + pH - c"]
+
+[[line]]
+type = "crease"
+from = ["X1", "Y1 + c"]
+to = ["X1", "Y1 + pH - c"]
+
+[[line]]
+type = "crease"
+from = ["X0", "Y0 - pH + c"]
+to = ["X0", "Y0 - c"]
+
+[[line]]
+type = "crease"
+from = ["X1", "Y0 - pH + c"]
+to = ["X1", "Y0 - c"]
+
+# ── Panels and hinges ──
+[[panel]]
+id = "base"
+x = "X0"
+y = "Y0"
+w = "pL"
+h = "pW"
+
+[[panel]]
+id = "wall_back"
+x = "X0"
+y = "Y1"
+w = "pL"
+h = "pH"
+
+[[panel]]
+id = "wall_front"
+x = "X0"
+y = "Y0 - pH"
+w = "pL"
+h = "pH"
+
+[[panel]]
+id = "wall_left"
+x = "0"
+y = "Y0"
+w = "pH"
+h = "pW"
+
+[[panel]]
+id = "wall_right"
+x = "X1"
+y = "Y0"
+w = "pH"
+h = "pW"
+
+[[panel]]
+id = "flap_bl"
+x = "X0 - gw"
+y = "Y1 + c"
+w = "gw"
+h = "pH - 2 * c"
+
+[[panel]]
+id = "flap_br"
+x = "X1"
+y = "Y1 + c"
+w = "gw"
+h = "pH - 2 * c"
+
+[[panel]]
+id = "flap_fl"
+x = "X0 - gw"
+y = "Y0 - pH + c"
+w = "gw"
+h = "pH - 2 * c"
+
+[[panel]]
+id = "flap_fr"
+x = "X1"
+y = "Y0 - pH + c"
+w = "gw"
+h = "pH - 2 * c"
+
+[[hinge]]
+a = "base"
+b = "wall_back"
+axis = ["X0", "Y1", "X1", "Y1"]
+closed_angle = 90
+
+[[hinge]]
+a = "base"
+b = "wall_front"
+axis = ["X0", "Y0", "X1", "Y0"]
+closed_angle = 90
+
+[[hinge]]
+a = "base"
+b = "wall_left"
+axis = ["X0", "Y0", "X0", "Y1"]
+closed_angle = 90
+
+[[hinge]]
+a = "base"
+b = "wall_right"
+axis = ["X1", "Y0", "X1", "Y1"]
+closed_angle = 90
+
+[[hinge]]
+a = "wall_back"
+b = "flap_bl"
+axis = ["X0", "Y1 + c", "X0", "Y1 + pH - c"]
+closed_angle = 90
+
+[[hinge]]
+a = "wall_back"
+b = "flap_br"
+axis = ["X1", "Y1 + c", "X1", "Y1 + pH - c"]
+closed_angle = 90
+
+[[hinge]]
+a = "wall_front"
+b = "flap_fl"
+axis = ["X0", "Y0 - pH + c", "X0", "Y0 - c"]
+closed_angle = 90
+
+[[hinge]]
+a = "wall_front"
+b = "flap_fr"
+axis = ["X1", "Y0 - pH + c", "X1", "Y0 - c"]
+closed_angle = 90

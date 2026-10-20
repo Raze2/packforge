@@ -1,0 +1,366 @@
+# Reverse tuck end carton — folding carton. The top lid and tuck hinge from the back panel; the bottom
+# lid hinges from the front panel at the bottom. Dust flaps on the side panels sit under the lids.
+# Allowances are NOMINAL for folding boxboard; verify with samples.
+
+[component]
+id = "tuck-end-reverse"
+version = "0.1.0"
+name = "Reverse tuck end carton"
+category = "ecma-tuck-end"
+tier = "premium"
+default_board = "FBB-0.5"
+dimension_reference = "inside"
+description = "Folding carton with tuck-in closures top and bottom (opposite side), side-seam glue flap and dust flaps."
+
+[[param]]
+id = "L"
+label = "Inside length"
+type = "length"
+default = 80
+min = 15
+max = 600
+group = "Dimensions"
+
+[[param]]
+id = "W"
+label = "Inside width"
+type = "length"
+default = 50
+min = 10
+max = 600
+group = "Dimensions"
+
+[[param]]
+id = "H"
+label = "Inside height"
+type = "length"
+default = 150
+min = 15
+max = 800
+group = "Dimensions"
+
+[[param]]
+id = "tuck"
+label = "Tuck flap depth"
+type = "length"
+default = 15
+min = 6
+max = 60
+group = "Construction"
+
+[[param]]
+id = "glue_width"
+label = "Glue flap width"
+type = "length"
+default = 15
+min = 8
+max = 30
+group = "Construction"
+
+[[param]]
+id = "glue_side"
+label = "Glue flap side"
+type = "enum"
+values = ["left", "right"]
+default = "left"
+group = "Construction"
+
+[derived]
+t = "board.caliper"
+pL = "L + t"
+pW = "W + t"
+pH = "H + 2 * t"
+g = "glue_width"
+taper = "min(g * 0.6, pH / 4)"
+tk = "tuck"
+ti = "max(t, 1mm)"                      # tongue inset so the tuck slides in
+rt = "min(tk * 0.45, (pL - 2 * ti) / 4)" # rounded tongue corners (below half the tongue depth)
+d = "min(pL * 0.45, pW)"                # dust flap depth (two must fit in the length)
+da = "min(d * 0.3, pW * 0.2)"           # dust flap edge angle offset
+rd = "min(3mm, da)"
+X0 = "g"
+X1 = "X0 + pL"
+X2 = "X1 + pW"
+X3 = "X2 + pL"
+X4 = "X3 + pW"
+yb = "pW + tk"                          # bottom score line
+yt = "yb + pH"                          # top score line
+
+[[rule]]
+when = "board.caliper > 1.5"
+level = "warning"
+message = "Tuck-end cartons are normally made from folding boxboard up to about 1 mm."
+
+[[rule]]
+when = "tk > pH / 2"
+level = "warning"
+message = "The tuck flap is deeper than half the carton height."
+
+[layout]
+mirror_x = "glue_side == 'right'"
+
+# ── Cut outline ──
+[[path]]
+type = "cut"
+closed = true
+points = [
+  ["0", "yb + taper"],
+  ["0", "yt - taper"],
+  ["X0", "yt"],
+  ["X0", "yt + pW"],
+  ["X0 + ti", "yt + pW"],
+  { at = ["X0 + ti", "yt + pW + tk"], round = "rt" },
+  { at = ["X1 - ti", "yt + pW + tk"], round = "rt" },
+  ["X1 - ti", "yt + pW"],
+  ["X1", "yt + pW"],
+  ["X1", "yt"],
+  { at = ["X1 + da", "yt + d"], round = "rd" },
+  { at = ["X2 - da", "yt + d"], round = "rd" },
+  ["X2", "yt"],
+  ["X3", "yt"],
+  { at = ["X3 + da", "yt + d"], round = "rd" },
+  { at = ["X4 - da", "yt + d"], round = "rd" },
+  ["X4", "yt"],
+  ["X4", "yb"],
+  { at = ["X4 - da", "yb - d"], round = "rd" },
+  { at = ["X3 + da", "yb - d"], round = "rd" },
+  ["X3", "yb"],
+  ["X3", "yb - pW"],
+  ["X3 - ti", "yb - pW"],
+  { at = ["X3 - ti", "yb - pW - tk"], round = "rt" },
+  { at = ["X2 + ti", "yb - pW - tk"], round = "rt" },
+  ["X2 + ti", "yb - pW"],
+  ["X2", "yb - pW"],
+  ["X2", "yb"],
+  { at = ["X2 - da", "yb - d"], round = "rd" },
+  { at = ["X1 + da", "yb - d"], round = "rd" },
+  ["X1", "yb"],
+  ["X0", "yb"],
+]
+
+# ── Creases ──
+[[line]]
+type = "crease"
+from = ["X0", "yb"]
+to = ["X0", "yt"]
+
+[[line]]
+type = "crease"
+from = ["X1", "yb"]
+to = ["X1", "yt"]
+
+[[line]]
+type = "crease"
+from = ["X2", "yb"]
+to = ["X2", "yt"]
+
+[[line]]
+type = "crease"
+from = ["X3", "yb"]
+to = ["X3", "yt"]
+
+# top closure
+[[line]]
+type = "crease"
+from = ["X0", "yt"]
+to = ["X1", "yt"]
+
+[[line]]
+type = "crease"
+from = ["X0 + ti", "yt + pW"]
+to = ["X1 - ti", "yt + pW"]
+
+[[line]]
+type = "crease"
+from = ["X1", "yt"]
+to = ["X2", "yt"]
+
+[[line]]
+type = "crease"
+from = ["X3", "yt"]
+to = ["X4", "yt"]
+
+# bottom closure
+[[line]]
+type = "crease"
+from = ["X2", "yb"]
+to = ["X3", "yb"]
+
+[[line]]
+type = "crease"
+from = ["X2 + ti", "yb - pW"]
+to = ["X3 - ti", "yb - pW"]
+
+[[line]]
+type = "crease"
+from = ["X1", "yb"]
+to = ["X2", "yb"]
+
+[[line]]
+type = "crease"
+from = ["X3", "yb"]
+to = ["X4", "yb"]
+
+# ── Panels and hinges ──
+[[panel]]
+id = "glue"
+x = "0"
+y = "yb"
+w = "g"
+h = "pH"
+
+[[panel]]
+id = "back"
+x = "X0"
+y = "yb"
+w = "pL"
+h = "pH"
+
+[[panel]]
+id = "side1"
+x = "X1"
+y = "yb"
+w = "pW"
+h = "pH"
+
+[[panel]]
+id = "front"
+x = "X2"
+y = "yb"
+w = "pL"
+h = "pH"
+
+[[panel]]
+id = "side2"
+x = "X3"
+y = "yb"
+w = "pW"
+h = "pH"
+
+[[panel]]
+id = "lid_top"
+x = "X0"
+y = "yt"
+w = "pL"
+h = "pW"
+
+[[panel]]
+id = "tuck_top"
+x = "X0 + ti"
+y = "yt + pW"
+w = "pL - 2 * ti"
+h = "tk"
+
+[[panel]]
+id = "dust_top1"
+x = "X1"
+y = "yt"
+w = "pW"
+h = "d"
+
+[[panel]]
+id = "dust_top2"
+x = "X3"
+y = "yt"
+w = "pW"
+h = "d"
+
+[[panel]]
+id = "lid_bottom"
+x = "X2"
+y = "yb - pW"
+w = "pL"
+h = "pW"
+
+[[panel]]
+id = "tuck_bottom"
+x = "X2 + ti"
+y = "yb - pW - tk"
+w = "pL - 2 * ti"
+h = "tk"
+
+[[panel]]
+id = "dust_bottom1"
+x = "X1"
+y = "yb - d"
+w = "pW"
+h = "d"
+
+[[panel]]
+id = "dust_bottom2"
+x = "X3"
+y = "yb - d"
+w = "pW"
+h = "d"
+
+[[hinge]]
+a = "back"
+b = "glue"
+axis = ["X0", "yb", "X0", "yt"]
+closed_angle = 90
+
+[[hinge]]
+a = "back"
+b = "side1"
+axis = ["X1", "yb", "X1", "yt"]
+closed_angle = 90
+
+[[hinge]]
+a = "side1"
+b = "front"
+axis = ["X2", "yb", "X2", "yt"]
+closed_angle = 90
+
+[[hinge]]
+a = "front"
+b = "side2"
+axis = ["X3", "yb", "X3", "yt"]
+closed_angle = 90
+
+[[hinge]]
+a = "back"
+b = "lid_top"
+axis = ["X0", "yt", "X1", "yt"]
+closed_angle = 90
+
+[[hinge]]
+a = "lid_top"
+b = "tuck_top"
+axis = ["X0 + ti", "yt + pW", "X1 - ti", "yt + pW"]
+closed_angle = 90
+
+[[hinge]]
+a = "side1"
+b = "dust_top1"
+axis = ["X1", "yt", "X2", "yt"]
+closed_angle = 90
+
+[[hinge]]
+a = "side2"
+b = "dust_top2"
+axis = ["X3", "yt", "X4", "yt"]
+closed_angle = 90
+
+[[hinge]]
+a = "front"
+b = "lid_bottom"
+axis = ["X2", "yb", "X3", "yb"]
+closed_angle = 90
+
+[[hinge]]
+a = "lid_bottom"
+b = "tuck_bottom"
+axis = ["X2 + ti", "yb - pW", "X3 - ti", "yb - pW"]
+closed_angle = 90
+
+[[hinge]]
+a = "side1"
+b = "dust_bottom1"
+axis = ["X1", "yb", "X2", "yb"]
+closed_angle = 90
+
+[[hinge]]
+a = "side2"
+b = "dust_bottom2"
+axis = ["X3", "yb", "X4", "yb"]
+closed_angle = 90

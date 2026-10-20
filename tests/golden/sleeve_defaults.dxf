@@ -1,0 +1,250 @@
+  0
+SECTION
+  2
+HEADER
+  9
+$ACADVER
+  1
+AC1009
+  9
+$INSUNITS
+ 70
+4
+  9
+$EXTMIN
+ 10
+0
+ 20
+0
+  9
+$EXTMAX
+ 10
+1047
+ 20
+150
+  0
+ENDSEC
+  0
+SECTION
+  2
+TABLES
+  0
+TABLE
+  2
+LTYPE
+ 70
+1
+  0
+LTYPE
+  2
+CONTINUOUS
+ 70
+0
+  3
+Solid line
+ 72
+65
+ 73
+0
+ 40
+0.0
+  0
+ENDTAB
+  0
+TABLE
+  2
+LAYER
+ 70
+2
+  0
+LAYER
+  2
+CUT
+ 70
+0
+ 62
+7
+  6
+CONTINUOUS
+  0
+LAYER
+  2
+CREASE
+ 70
+0
+ 62
+1
+  6
+CONTINUOUS
+  0
+ENDTAB
+  0
+ENDSEC
+  0
+SECTION
+  2
+ENTITIES
+  0
+LINE
+  8
+CUT
+ 10
+0
+ 20
+15
+ 30
+0
+ 11
+0
+ 21
+135
+ 31
+0
+  0
+LINE
+  8
+CUT
+ 10
+0
+ 20
+135
+ 30
+0
+ 11
+35
+ 21
+150
+ 31
+0
+  0
+LINE
+  8
+CUT
+ 10
+35
+ 20
+150
+ 30
+0
+ 11
+1047
+ 21
+150
+ 31
+0
+  0
+LINE
+  8
+CUT
+ 10
+1047
+ 20
+150
+ 30
+0
+ 11
+1047
+ 21
+0
+ 31
+0
+  0
+LINE
+  8
+CUT
+ 10
+1047
+ 20
+0
+ 30
+0
+ 11
+35
+ 21
+0
+ 31
+0
+  0
+LINE
+  8
+CUT
+ 10
+35
+ 20
+0
+ 30
+0
+ 11
+0
+ 21
+15
+ 31
+0
+  0
+LINE
+  8
+CREASE
+ 10
+35
+ 20
+0
+ 30
+0
+ 11
+35
+ 21
+150
+ 31
+0
+  0
+LINE
+  8
+CREASE
+ 10
+338
+ 20
+0
+ 30
+0
+ 11
+338
+ 21
+150
+ 31
+0
+  0
+LINE
+  8
+CREASE
+ 10
+541
+ 20
+0
+ 30
+0
+ 11
+541
+ 21
+150
+ 31
+0
+  0
+LINE
+  8
+CREASE
+ 10
+844
+ 20
+0
+ 30
+0
+ 11
+844
+ 21
+150
+ 31
+0
+  0
+ENDSEC
+  0
+EOF
