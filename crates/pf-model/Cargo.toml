@@ -1,0 +1,18 @@
+[package]
+name = "pf-model"
+description = "Domain types: line types, die-lines, panels, boards, projects"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+pf-geom.workspace = true
+serde.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1457mm" height="569mm" viewBox="0 0 1457 569">
+  <title>fefco-0201 — B-flute</title>
+  <g id="cut" class="pf-cut" fill="none" stroke="#1d1d1f" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M1452 397.5L1452 171.5L1417 156.5L1414.5 156.5L1414.5 5L1016.5 5L1016.5 156.5L1011.5 156.5L1011.5 5L713.5 5L713.5 156.5L708.5 156.5L708.5 5L310.5 5L310.5 156.5L305.5 156.5L305.5 5L7.5 5L7.5 156.5L5 156.5L5 412.5L7.5 412.5L7.5 564L305.5 564L305.5 412.5L310.5 412.5L310.5 564L708.5 564L708.5 412.5L713.5 412.5L713.5 564L1011.5 564L1011.5 412.5L1016.5 412.5L1016.5 564L1414.5 564L1414.5 412.5L1417 412.5L1452 397.5Z"/>
+  </g>
+  <g id="crease" class="pf-crease" fill="none" stroke="#d0021b" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 3">
+    <path d="M1417 412.5L1417 156.5"/>
+    <path d="M1014 412.5L1014 156.5"/>
+    <path d="M711 412.5L711 156.5"/>
+    <path d="M308 412.5L308 156.5"/>
+    <path d="M1414.5 412.5L1016.5 412.5"/>
+    <path d="M1011.5 412.5L713.5 412.5"/>
+    <path d="M708.5 412.5L310.5 412.5"/>
+    <path d="M305.5 412.5L7.5 412.5"/>
+    <path d="M1414.5 156.5L1016.5 156.5"/>
+    <path d="M1011.5 156.5L713.5 156.5"/>
+    <path d="M708.5 156.5L310.5 156.5"/>
+    <path d="M305.5 156.5L7.5 156.5"/>
+  </g>
+</svg>

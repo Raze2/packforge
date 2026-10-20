@@ -1,0 +1,14 @@
+[package]
+name = "pf-expr"
+description = "Small sandboxed expression language for component formulas"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+
+[lints]
+workspace = true

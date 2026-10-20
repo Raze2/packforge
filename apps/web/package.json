@@ -1,0 +1,22 @@
+{
+  "name": "@packforge/web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build:wasm": "node scripts/build-wasm.mjs",
+    "dev": "pnpm build:wasm && vite",
+    "build": "pnpm build:wasm && pnpm check && vite build && pnpm build:wc",
+    "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings --compiler-warnings options_missing_custom_element:ignore",
+    "preview": "vite preview",
+    "build:wc": "vite build --config vite.wc.config.ts && node scripts/copy-wc.mjs"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@tsconfig/svelte": "^5.0.8",
+    "svelte": "^5.57.2",
+    "svelte-check": "^4.7.7",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.4"
+  }
+}

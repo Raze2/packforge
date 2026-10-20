@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PackForge embed demo</title>
+    <style>
+      body { font: 15px system-ui, sans-serif; margin: 0; padding: 24px 16px; background: #fafafa; color: #222; }
+      main { max-width: 1200px; margin: 0 auto; }
+      packforge-designer { height: 640px; border: 1px solid #ddd; border-radius: 12px; overflow: hidden; }
+      pre { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; overflow: auto; max-height: 220px; font-size: 12px; }
+    </style>
+    <script type="module" src="/src/wc/index.ts"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Your shop page</h1>
+      <p>This is a host page (e.g. a Laravel Blade view) embedding the configurator as a web component.</p>
+      <packforge-designer
+        mode="configurator"
+        component="fefco-0201"
+        params='{"L":400,"W":300,"H":250}'
+        board="B-flute"
+        theme="light"
+      ></packforge-designer>
+      <h2>Events from the designer</h2>
+      <pre id="log">waiting…</pre>
+    </main>
+    <script type="module">
+      const el = document.querySelector('packforge-designer');
+      const log = document.getElementById('log');
+      const show = (name, d) => (log.textContent = `${name}\n${JSON.stringify(d, null, 2)}`);
+      el.addEventListener('pf:change', (e) => show('pf:change', { project: e.detail.project, stats: e.detail.result?.stats }));
+      el.addEventListener('pf:save', (e) => { e.preventDefault(); show('pf:save (handled by host page)', e.detail.project); });
+      el.addEventListener('pf:error', (e) => show('pf:error', e.detail));
+    </script>
+  </body>
+</html>

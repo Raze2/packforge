@@ -1,0 +1,21 @@
+[package]
+name = "pf-cli"
+description = "PackForge command-line tool"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "pf"
+path = "src/main.rs"
+
+[dependencies]
+pf-core.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

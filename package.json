@@ -1,0 +1,10 @@
+{
+  "name": "packforge",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "pnpm --dir apps/web dev",
+    "build:web": "pnpm --dir apps/web build",
+    "check:web": "pnpm --dir apps/web check"
+  }
+}

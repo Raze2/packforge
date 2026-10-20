@@ -1,0 +1,16 @@
+[package]
+name = "pf-export"
+description = "Die-line writers: SVG, DXF (PDF, CF2, HPGL in later stages)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+pf-geom.workspace = true
+pf-model.workspace = true
+serde.workspace = true
+
+[lints]
+workspace = true
