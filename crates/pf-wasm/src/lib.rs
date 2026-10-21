@@ -87,3 +87,29 @@ pub fn nest(project_json: &str, nesting_json: &str) -> Result<String, JsValue> {
         serde_json::from_str(nesting_json).map_err(|e| error("invalid_options", &e.to_string()))?;
     to_json(&pf_core::nest_preview(&p, &n).map_err(core_err)?)
 }
+
+/// Project JSON + `PalletRequest` JSON in, `PalletResult` JSON out.
+#[wasm_bindgen(js_name = palletPlan)]
+pub fn pallet_plan(project_json: &str, request_json: &str) -> Result<String, JsValue> {
+    let p = parse_project(project_json)?;
+    let r: pf_core::PalletRequest =
+        serde_json::from_str(request_json).map_err(|e| error("invalid_options", &e.to_string()))?;
+    to_json(&pf_core::pallet_plan(&p, &r).map_err(core_err)?)
+}
+
+/// Project JSON + `PalletRequest` JSON in, PDF report bytes out.
+#[wasm_bindgen(js_name = palletReport)]
+pub fn pallet_report(project_json: &str, request_json: &str) -> Result<Vec<u8>, JsValue> {
+    let p = parse_project(project_json)?;
+    let r: pf_core::PalletRequest =
+        serde_json::from_str(request_json).map_err(|e| error("invalid_options", &e.to_string()))?;
+    pf_core::pallet_report(&p, &r).map_err(core_err)
+}
+
+/// `CaseRequest` JSON in, ranked `CaseCandidate` array JSON out.
+#[wasm_bindgen(js_name = caseOptimize)]
+pub fn case_optimize(request_json: &str) -> Result<String, JsValue> {
+    let r: pf_core::CaseRequest =
+        serde_json::from_str(request_json).map_err(|e| error("invalid_options", &e.to_string()))?;
+    to_json(&pf_core::case_optimize(&r).map_err(core_err)?)
+}

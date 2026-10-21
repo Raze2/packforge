@@ -387,3 +387,38 @@ async fn nest_and_fold_endpoints() {
     assert_eq!(r.status, StatusCode::OK);
     assert_eq!(r.json()["panels"].as_array().expect("panels").len(), 13);
 }
+
+#[tokio::test]
+async fn pallet_and_case_endpoints() {
+    let app = server(100);
+    let body = json!({ "project": project(), "pallet": { "pallet": "eur", "max_height": 1800 } });
+    let r = send(&app, post("/v1/pallet", body.clone())).await;
+    assert_eq!(r.status, StatusCode::OK);
+    let plan = r.json();
+    assert!(plan["plan"]["total"].as_u64().expect("total") > 0);
+    assert_eq!(plan["box_outer"][0], 308.0);
+
+    let r = send(&app, post("/v1/pallet/report", body)).await;
+    assert_eq!(r.header("content-type"), "application/pdf");
+    assert!(r.body.starts_with(b"%PDF"));
+
+    let bad = json!({ "project": project(), "pallet": { "pallet": "moon" } });
+    assert_eq!(
+        send(&app, post("/v1/pallet", bad)).await.status,
+        StatusCode::UNPROCESSABLE_ENTITY
+    );
+
+    let r = send(
+        &app,
+        post(
+            "/v1/case-optimize",
+            json!({ "product": [100, 80, 60], "count": 12, "max_results": 3 }),
+        ),
+    )
+    .await;
+    assert_eq!(r.status, StatusCode::OK);
+    let list = r.json();
+    let list = list.as_array().expect("array");
+    assert_eq!(list.len(), 3);
+    assert!(list[0]["board_m2_per_product"].as_f64() <= list[1]["board_m2_per_product"].as_f64());
+}

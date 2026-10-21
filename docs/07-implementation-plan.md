@@ -172,7 +172,19 @@ Not yet: true-shape nesting, a profile editor UI, verification on a real cutting
 - Nesting v1: rectangular bounding-box nesting on a sheet with gaps; true-shape later.
 - Verification against at least one real cutting table / CAM import.
 
-## Stage 8 — Optimisation & reports (M–L)
+## Stage 8 — Optimisation & reports (M–L) — ✅ done
+
+Status: pallet loading in `pf-optimize` (block, two-block and pinwheel layer patterns; EUR,
+half-EUR, ISO, GMA, Asia or custom pallets; height and weight limits, overhang, boxes on their
+side; mirrored alternate layers), with tests that every layout stays on the pallet without
+overlaps. Case sizing in `pf-core`: every factorisation and product orientation for N products,
+rendered with the chosen style and ranked by board per product or products per pallet, with an
+optional board cost. A4 pallet report (top view, side view, figures). Available in the CLI
+(`pf pallet`, `pf case`), API (`/pallet`, `/pallet/report`, `/case-optimize`), WASM, Laravel
+(`pallet()`, `palletReport()`, `caseOptimize()`) and the designer (Pallet view, "Find case size"
+dialog). Outer sizes are nominal (inside + 2 × caliper) until measured values are given.
+Not yet: 3D pallet view, mixed-size loads, stacking-strength (BCT/ECT) checks, HTML reports.
+
 
 - Pallet loading: EUR/US/ISO pallets, max height/weight, layer patterns (block, interlocked,
   pinwheel), overhang rules; 3D layer view.

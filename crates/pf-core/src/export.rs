@@ -102,7 +102,7 @@ pub fn export_with(
                     page,
                     title_lines: title_lines(project, &r, nest.as_ref()),
                     watermark: opts.watermark.clone(),
-                    include: LineType::ALL.to_vec(),
+                    ..PdfOptions::default()
                 },
             )
         }

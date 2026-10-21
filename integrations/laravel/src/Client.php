@@ -121,6 +121,53 @@ class Client
         return $this->send(fn () => $this->request()->post('fold', ['project' => $project, 'progress' => $progress]))->json();
     }
 
+    /**
+     * Pallet plan for a design. $pallet: pallet (preset id or [length, width, height]),
+     * max_height, box_weight, max_weight, overhang, allow_on_side, box_outer.
+     *
+     * @param  array<string, mixed>  $project
+     * @param  array<string, mixed>  $pallet
+     * @return array<string, mixed>
+     */
+    public function pallet(array $project, array $pallet = []): array
+    {
+        return $this->send(fn () => $this->request()->post('pallet', ['project' => $project, 'pallet' => (object) $pallet]))->json();
+    }
+
+    /**
+     * Pallet plan as an A4 PDF report.
+     *
+     * @param  array<string, mixed>  $project
+     * @param  array<string, mixed>  $pallet
+     */
+    public function palletReport(array $project, array $pallet = []): ExportedFile
+    {
+        $res = $this->send(fn () => $this->request()
+            ->withHeaders(['Accept' => 'application/pdf'])
+            ->post('pallet/report', ['project' => $project, 'pallet' => (object) $pallet]));
+
+        return new ExportedFile(
+            contents: $res->body(),
+            mimeType: 'application/pdf',
+            filename: self::filenameFrom($res->header('Content-Disposition'), $project, 'pdf'),
+        );
+    }
+
+    /**
+     * Case sizes for $count products of [length, width, height] mm, best first.
+     * Options: component_id, board, clearance, allow_rotation, max_results, pallet, board_price_per_m2.
+     *
+     * @param  array{0: float|int, 1: float|int, 2: float|int}  $product
+     * @param  array<string, mixed>  $options
+     * @return array<int, array<string, mixed>>
+     */
+    public function caseOptimize(array $product, int $count, array $options = []): array
+    {
+        $body = ['product' => array_values($product), 'count' => $count] + $options;
+
+        return $this->send(fn () => $this->request()->post('case-optimize', $body))->json();
+    }
+
     protected function request(bool $auth = true): PendingRequest
     {
         $req = $this->http

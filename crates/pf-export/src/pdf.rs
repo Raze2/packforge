@@ -53,6 +53,10 @@ pub struct PdfOptions {
     pub watermark: Option<String>,
     /// Line types to draw (in this order); others are skipped.
     pub include: Vec<LineType>,
+    /// Draw overall dimension lines.
+    pub dimensions: bool,
+    /// Draw the line-type legend.
+    pub legend: bool,
 }
 
 impl Default for PdfOptions {
@@ -62,6 +66,8 @@ impl Default for PdfOptions {
             title_lines: Vec::new(),
             watermark: None,
             include: LineType::ALL.to_vec(),
+            dimensions: true,
+            legend: true,
         }
     }
 }
@@ -264,50 +270,52 @@ pub fn to_pdf(d: &DieLine, opts: &PdfOptions) -> Vec<u8> {
     }
 
     // Overall dimensions (true sizes, even when scaled to fit).
-    let gap = 6.0 / scale; // 6 mm on paper, in drawing units
-    let tick = 2.0 / scale;
-    let font = 8.0;
-    c.op(&format!(
-        "q 0.45 0.45 0.47 RG 0.45 0.45 0.47 rg {} w",
-        num(0.2 * PT_PER_MM)
-    ));
-    let y = b.min.y - gap;
-    for (p0, p1) in [
-        (Point::new(b.min.x, y), Point::new(b.max.x, y)),
-        (Point::new(b.min.x, y - tick), Point::new(b.min.x, y + tick)),
-        (Point::new(b.max.x, y - tick), Point::new(b.max.x, y + tick)),
-    ] {
-        let ((x0, y0), (x1, y1)) = (c.p(p0), c.p(p1));
+    if opts.dimensions {
+        let gap = 6.0 / scale; // 6 mm on paper, in drawing units
+        let tick = 2.0 / scale;
+        let font = 8.0;
         c.op(&format!(
-            "{} {} m {} {} l S",
-            num(x0),
-            num(y0),
-            num(x1),
-            num(y1)
+            "q 0.45 0.45 0.47 RG 0.45 0.45 0.47 rg {} w",
+            num(0.2 * PT_PER_MM)
         ));
+        let y = b.min.y - gap;
+        for (p0, p1) in [
+            (Point::new(b.min.x, y), Point::new(b.max.x, y)),
+            (Point::new(b.min.x, y - tick), Point::new(b.min.x, y + tick)),
+            (Point::new(b.max.x, y - tick), Point::new(b.max.x, y + tick)),
+        ] {
+            let ((x0, y0), (x1, y1)) = (c.p(p0), c.p(p1));
+            c.op(&format!(
+                "{} {} m {} {} l S",
+                num(x0),
+                num(y0),
+                num(x1),
+                num(y1)
+            ));
+        }
+        let wl = format!("{} mm", num(dw));
+        let (mx, my) = c.p(Point::new((b.min.x + b.max.x) / 2.0, y));
+        c.text(mx - text_width(&wl, font) / 2.0, my - font - 2.0, font, &wl);
+        let x = b.max.x + gap;
+        for (p0, p1) in [
+            (Point::new(x, b.min.y), Point::new(x, b.max.y)),
+            (Point::new(x - tick, b.min.y), Point::new(x + tick, b.min.y)),
+            (Point::new(x - tick, b.max.y), Point::new(x + tick, b.max.y)),
+        ] {
+            let ((x0, y0), (x1, y1)) = (c.p(p0), c.p(p1));
+            c.op(&format!(
+                "{} {} m {} {} l S",
+                num(x0),
+                num(y0),
+                num(x1),
+                num(y1)
+            ));
+        }
+        let hl = format!("{} mm", num(dh));
+        let (hx, hy) = c.p(Point::new(x, (b.min.y + b.max.y) / 2.0));
+        c.text(hx + 4.0, hy - font / 2.0, font, &hl);
+        c.op("Q");
     }
-    let wl = format!("{} mm", num(dw));
-    let (mx, my) = c.p(Point::new((b.min.x + b.max.x) / 2.0, y));
-    c.text(mx - text_width(&wl, font) / 2.0, my - font - 2.0, font, &wl);
-    let x = b.max.x + gap;
-    for (p0, p1) in [
-        (Point::new(x, b.min.y), Point::new(x, b.max.y)),
-        (Point::new(x - tick, b.min.y), Point::new(x + tick, b.min.y)),
-        (Point::new(x - tick, b.max.y), Point::new(x + tick, b.max.y)),
-    ] {
-        let ((x0, y0), (x1, y1)) = (c.p(p0), c.p(p1));
-        c.op(&format!(
-            "{} {} m {} {} l S",
-            num(x0),
-            num(y0),
-            num(x1),
-            num(y1)
-        ));
-    }
-    let hl = format!("{} mm", num(dh));
-    let (hx, hy) = c.p(Point::new(x, (b.min.y + b.max.y) / 2.0));
-    c.text(hx + 4.0, hy - font / 2.0, font, &hl);
-    c.op("Q");
 
     // Title block and legend along the bottom of the page.
     let bx = MARGIN * PT_PER_MM;
@@ -347,7 +355,7 @@ pub fn to_pdf(d: &DieLine, opts: &PdfOptions) -> Vec<u8> {
     // Legend: one swatch per line type present.
     let mut lx = bx + bw * 0.55;
     let ly = by + bh - 16.0;
-    for t in &opts.include {
+    for t in opts.include.iter().filter(|_| opts.legend) {
         if !d.entities.iter().any(|e| e.line_type == *t) {
             continue;
         }

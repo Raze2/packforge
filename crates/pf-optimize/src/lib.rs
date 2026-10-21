@@ -1,4 +1,7 @@
-//! Optimisation: sheet nesting today; case sizing and pallet loading in Stage 8.
+//! Optimisation: sheet nesting and pallet loading (case sizing lives in pf-core, which can
+//! render candidate boxes).
+
+pub mod pallet;
 
 use serde::{Deserialize, Serialize};
 

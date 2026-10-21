@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "PackForge API",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Render and export parametric packaging designs. All lengths are millimetres. Responses are deterministic for the same input."
   },
   "servers": [
@@ -355,6 +355,122 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/v1/pallet": {
+      "post": {
+        "summary": "Pallet plan for a design",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "project"
+                ],
+                "properties": {
+                  "project": {
+                    "$ref": "#/components/schemas/Project"
+                  },
+                  "pallet": {
+                    "$ref": "#/components/schemas/PalletRequest"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pattern, per layer, layers, total, efficiencies, box positions of one layer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/v1/pallet/report": {
+      "post": {
+        "summary": "Pallet plan as an A4 PDF report",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "project"
+                ],
+                "properties": {
+                  "project": {
+                    "$ref": "#/components/schemas/Project"
+                  },
+                  "pallet": {
+                    "$ref": "#/components/schemas/PalletRequest"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PDF",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/v1/case-optimize": {
+      "post": {
+        "summary": "Case sizes for N products, ranked by board per product (or products per pallet)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ranked candidates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem"
           }
         }
       }
@@ -789,6 +905,121 @@
             "type": "number"
           },
           "utilisation": {
+            "type": "number"
+          }
+        }
+      },
+      "PalletRequest": {
+        "type": "object",
+        "properties": {
+          "pallet": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "eur",
+                  "eur-half",
+                  "iso-1200x1000",
+                  "gma",
+                  "asia"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "length": {
+                    "type": "number"
+                  },
+                  "width": {
+                    "type": "number"
+                  },
+                  "height": {
+                    "type": "number"
+                  }
+                }
+              }
+            ],
+            "default": "eur"
+          },
+          "max_height": {
+            "type": "number",
+            "default": 1800
+          },
+          "box_weight": {
+            "type": "number"
+          },
+          "max_weight": {
+            "type": "number"
+          },
+          "overhang": {
+            "type": "number",
+            "default": 0
+          },
+          "allow_on_side": {
+            "type": "boolean",
+            "default": false
+          },
+          "box_outer": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 3,
+            "maxItems": 3,
+            "description": "Measured outer size; default inside + 2 calipers"
+          }
+        }
+      },
+      "CaseRequest": {
+        "type": "object",
+        "required": [
+          "product",
+          "count"
+        ],
+        "properties": {
+          "product": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "component_id": {
+            "type": "string",
+            "default": "fefco-0201"
+          },
+          "board": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/components/schemas/Board"
+              }
+            ],
+            "default": "C-flute"
+          },
+          "clearance": {
+            "type": "number",
+            "default": 4
+          },
+          "allow_rotation": {
+            "type": "boolean",
+            "default": true
+          },
+          "max_results": {
+            "type": "integer",
+            "default": 10
+          },
+          "pallet": {
+            "$ref": "#/components/schemas/PalletRequest"
+          },
+          "board_price_per_m2": {
             "type": "number"
           }
         }

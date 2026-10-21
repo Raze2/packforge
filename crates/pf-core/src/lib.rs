@@ -5,8 +5,14 @@
 
 mod export;
 mod library;
+mod optimize;
 
 pub use export::{export, export_with, nest_preview, ExportOptions, NestSummary};
+pub use optimize::{
+    box_outer, case_optimize, pallet_plan, pallet_report, CaseCandidate, CaseRequest, PalletChoice,
+    PalletRequest, PalletResult,
+};
+pub use pf_optimize::pallet::{Pallet, PalletPlan, Pattern};
 
 pub use library::{boards, BUILTIN_COMPONENTS};
 pub use pf_component::{ComponentInfo, ParamDef, ParamIssue, ParamType, RenderError, Tier};

@@ -114,6 +114,29 @@ class ClientTest extends TestCase
         $this->assertEquals(1, $design->fold()['progress']);
     }
 
+    public function test_pallet_report_and_case_optimize(): void
+    {
+        Http::fake([
+            '*/pallet/report' => Http::response('%PDF-1.4', 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="fefco-0201-pallet.pdf"',
+            ]),
+            '*/pallet' => Http::response(['pallet_name' => 'EUR', 'plan' => ['total' => 70]]),
+            '*/case-optimize' => Http::response([['inside' => [244, 124, 204], 'board_m2_per_product' => 0.022]]),
+        ]);
+
+        $design = PackForge::component('fefco-0201')->params(['L' => 342, 'W' => 242, 'H' => 200]);
+        $this->assertSame(70, $design->pallet(['pallet' => 'eur', 'box_weight' => 8])['plan']['total']);
+        $this->assertSame('fefco-0201-pallet.pdf', $design->palletReport()->filename);
+
+        $cases = PackForge::caseOptimize([100, 80, 60], 12, ['pallet' => ['pallet' => 'eur']]);
+        $this->assertSame([244, 124, 204], $cases[0]['inside']);
+        Http::assertSent(fn (Request $r) => str_ends_with($r->url(), '/case-optimize')
+            && $r['product'] === [100, 80, 60] && $r['count'] === 12 && $r['pallet']['pallet'] === 'eur');
+        Http::assertSent(fn (Request $r) => str_ends_with($r->url(), '/pallet')
+            && json_decode($r->body(), true)['pallet']['box_weight'] === 8);
+    }
+
     public function test_invalid_params_raise_a_validation_exception(): void
     {
         Http::fake(['*' => Http::response([

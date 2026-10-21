@@ -145,6 +145,21 @@ class Design implements JsonSerializable
         return $this->client->nest($this->toArray(), $nesting);
     }
 
+    /**
+     * Pallet plan, e.g. ['pallet' => 'eur', 'max_height' => 1800, 'box_weight' => 8].
+     *
+     * @return array<string, mixed>
+     */
+    public function pallet(array $pallet = []): array
+    {
+        return $this->client->pallet($this->toArray(), $pallet);
+    }
+
+    public function palletReport(array $pallet = []): ExportedFile
+    {
+        return $this->client->palletReport($this->toArray(), $pallet);
+    }
+
     /** @return array<string, mixed> */
     public function fold(float $progress = 1.0): array
     {

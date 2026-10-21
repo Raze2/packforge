@@ -64,6 +64,9 @@ pub fn app(settings: Settings) -> Router {
         .route("/v1/export", post(export))
         .route("/v1/nest", post(nest))
         .route("/v1/fold", post(fold))
+        .route("/v1/pallet", post(pallet))
+        .route("/v1/pallet/report", post(pallet_report))
+        .route("/v1/case-optimize", post(case_optimize))
         .route_layer(middleware::from_fn_with_state(state.clone(), auth));
 
     let mut router = Router::new()
@@ -203,6 +206,43 @@ struct FoldRequest {
 
 fn erected() -> f64 {
     1.0
+}
+
+#[derive(Deserialize)]
+struct PalletBody {
+    project: Project,
+    #[serde(default)]
+    pallet: pf_core::PalletRequest,
+}
+
+async fn pallet(
+    ApiJson(req): ApiJson<PalletBody>,
+) -> Result<Json<pf_core::PalletResult>, ApiError> {
+    Ok(Json(pf_core::pallet_plan(&req.project, &req.pallet)?))
+}
+
+async fn pallet_report(ApiJson(req): ApiJson<PalletBody>) -> Result<Response, ApiError> {
+    let pdf = pf_core::pallet_report(&req.project, &req.pallet)?;
+    Ok((
+        [
+            (header::CONTENT_TYPE, "application/pdf".to_string()),
+            (
+                header::CONTENT_DISPOSITION,
+                format!(
+                    "attachment; filename=\"{}-pallet.pdf\"",
+                    req.project.component_id
+                ),
+            ),
+        ],
+        pdf,
+    )
+        .into_response())
+}
+
+async fn case_optimize(
+    ApiJson(req): ApiJson<pf_core::CaseRequest>,
+) -> Result<Json<Vec<pf_core::CaseCandidate>>, ApiError> {
+    Ok(Json(pf_core::case_optimize(&req)?))
 }
 
 async fn fold(ApiJson(req): ApiJson<FoldRequest>) -> Result<Json<pf_core::Folded>, ApiError> {

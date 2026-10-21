@@ -30,6 +30,8 @@
   import DielineView from './components/DielineView.svelte';
   import FoldView from './components/FoldView.svelte';
   import ExportDialog from './components/ExportDialog.svelte';
+  import PalletView from './components/PalletView.svelte';
+  import CaseDialog from './components/CaseDialog.svelte';
   import Library from './components/Library.svelte';
   import ParamForm from './components/ParamForm.svelte';
   import StatsBar from './components/StatsBar.svelte';
@@ -130,8 +132,9 @@
   let docName = $state<string | null>(null);
   let savedJson = $state('');
   let fitNonce = $state(0);
-  let view = $state<'2d' | '3d'>('2d');
+  let view = $state<'2d' | '3d' | 'pallet'>('2d');
   let exportOpen = $state(false);
+  let caseOpen = $state(false);
   const docJson = (p: Project) =>
     JSON.stringify({ c: p.component_id, p: p.params, b: p.board, u: p.units });
   const dirty = $derived(savedJson !== '' && docJson(project) !== savedJson);
@@ -149,6 +152,10 @@
       return null;
     }
   });
+
+  const hasBoxDims = $derived(
+    !!info && ['L', 'W', 'H'].every((id) => info.params.some((p) => p.id === id)),
+  );
 
   const rendered = $derived.by(() => {
     if (!ready) return { result: null, error: null, ms: null };
@@ -481,8 +488,15 @@
           <button type="button" class:active={view === '3d'} aria-pressed={view === '3d'} onclick={() => (view = '3d')}>
             {t('view.3d')}
           </button>
+          {#if hasBoxDims}
+            <button type="button" class:active={view === 'pallet'} aria-pressed={view === 'pallet'} onclick={() => (view = 'pallet')}>
+              {t('view.pallet')}
+            </button>
+          {/if}
         </div>
-        {#if view === '3d' && rendered.result}
+        {#if view === 'pallet' && hasBoxDims && rendered.result}
+          <PalletView {project} {locale} {t} />
+        {:else if view === '3d' && rendered.result}
           <FoldView
             {project}
             corrugated={!!rendered.result.board.flute}
@@ -535,6 +549,9 @@
           <h2>{t(`component.${info.id}`, undefined, info.name)}</h2>
           <span>{info.standard ?? info.id} · v{info.version}</span>
         </div>
+        {#if hasBoxDims}
+          <button type="button" class="find-size" onclick={() => (caseOpen = true)}>{t('case.open')}</button>
+        {/if}
         {#key info.id}
         <ParamForm
           {info}
@@ -560,6 +577,18 @@
     onexport={(f, o) => {
       exportOpen = false;
       void exportAs(f, o);
+    }}
+  />
+
+  <CaseDialog
+    open={caseOpen}
+    {project}
+    {locale}
+    {t}
+    onclose={() => (caseOpen = false)}
+    onuse={([l, w, h]) => {
+      project.params = { ...project.params, L: l, W: w, H: h };
+      caseOpen = false;
     }}
   />
 
@@ -812,6 +841,19 @@
   }
   .state.error {
     color: var(--pf-danger);
+  }
+  .find-size {
+    width: 100%;
+    height: 34px;
+    margin-block-end: 16px;
+    border: 1px dashed var(--pf-accent);
+    border-radius: 9px;
+    background: var(--pf-accent-soft);
+    color: var(--pf-accent);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
   }
   .views {
     position: absolute;

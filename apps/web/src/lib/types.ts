@@ -215,3 +215,67 @@ export interface Folded {
   min: Vec3;
   max: Vec3;
 }
+
+export type PalletPreset = 'eur' | 'eur-half' | 'iso-1200x1000' | 'gma' | 'asia';
+
+export interface PalletRequest {
+  pallet?: PalletPreset | { length: number; width: number; height: number };
+  max_height?: number;
+  box_weight?: number | null;
+  max_weight?: number | null;
+  overhang?: number;
+  allow_on_side?: boolean;
+  box_outer?: [number, number, number] | null;
+}
+
+export interface LayerRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface PalletResult {
+  pallet_name: string;
+  box_outer: [number, number, number];
+  plan: {
+    pallet: { length: number; width: number; height: number };
+    pattern: 'block' | 'two-block' | 'pinwheel';
+    standing_on: 'height' | 'width' | 'length';
+    per_layer: number;
+    layers: number;
+    total: number;
+    layer: LayerRect[];
+    alternate: boolean;
+    layer_height: number;
+    load_height: number;
+    load_weight: number | null;
+    area_efficiency: number;
+    volume_efficiency: number;
+    limited_by: 'height' | 'weight';
+  };
+}
+
+export interface CaseRequest {
+  product: [number, number, number];
+  count: number;
+  component_id?: string;
+  board?: BoardRef;
+  clearance?: number;
+  allow_rotation?: boolean;
+  max_results?: number;
+  pallet?: PalletRequest | null;
+  board_price_per_m2?: number | null;
+}
+
+export interface CaseCandidate {
+  arrangement: [number, number, number];
+  product_axes: [number, number, number];
+  inside: [number, number, number];
+  outer: [number, number, number];
+  blank_area_m2: number;
+  board_m2_per_product: number;
+  board_cost_per_case: number | null;
+  cases_per_pallet: number | null;
+  products_per_pallet: number | null;
+}

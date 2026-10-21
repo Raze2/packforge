@@ -50,6 +50,55 @@ enum Command {
         #[command(flatten)]
         production: ProductionArgs,
     },
+    /// Plan a pallet load for a design (and optionally write a PDF report).
+    Pallet {
+        #[command(flatten)]
+        design: DesignArgs,
+        /// Pallet preset: eur, eur-half, iso-1200x1000, gma, asia
+        #[arg(long, default_value = "eur")]
+        pallet: String,
+        /// Maximum height including the pallet (mm)
+        #[arg(long, default_value_t = 1800.0)]
+        max_height: f64,
+        /// Weight of one filled box (kg)
+        #[arg(long)]
+        box_weight: Option<f64>,
+        /// Maximum load weight (kg)
+        #[arg(long)]
+        max_weight: Option<f64>,
+        #[arg(long, default_value_t = 0.0)]
+        overhang: f64,
+        /// Allow boxes on their side
+        #[arg(long)]
+        on_side: bool,
+        /// Write the PDF report to this file
+        #[arg(long)]
+        report: Option<PathBuf>,
+    },
+    /// Find case sizes for N products, ranked by board per product (or per pallet with --pallet).
+    Case {
+        /// Product size in mm, e.g. 100x80x60
+        product: String,
+        /// Products per case
+        count: usize,
+        #[arg(long, default_value = "fefco-0201")]
+        component: String,
+        #[arg(short, long, default_value = "C-flute")]
+        board: String,
+        #[arg(long, default_value_t = 4.0)]
+        clearance: f64,
+        /// Keep the product height vertical
+        #[arg(long)]
+        upright: bool,
+        /// Also plan this pallet and rank by products per pallet
+        #[arg(long)]
+        pallet: Option<String>,
+        /// Board price per m² for a cost column
+        #[arg(long)]
+        price: Option<f64>,
+        #[arg(long, default_value_t = 10)]
+        top: usize,
+    },
     /// How many blanks fit on a sheet.
     Nest {
         #[command(flatten)]
@@ -228,6 +277,127 @@ fn run(cli: Cli) -> Result<(), String> {
         Command::Fold { design, progress } => {
             let f = pf_core::fold(&design.project()?, progress).map_err(|e| e.to_string())?;
             println!("{}", pretty(&f)?);
+        }
+        Command::Pallet {
+            design,
+            pallet,
+            max_height,
+            box_weight,
+            max_weight,
+            overhang,
+            on_side,
+            report,
+        } => {
+            let req = pf_core::PalletRequest {
+                pallet: pf_core::PalletChoice::Preset(pallet),
+                max_height,
+                box_weight,
+                max_weight,
+                overhang,
+                allow_on_side: on_side,
+                box_outer: None,
+            };
+            let project = design.project()?;
+            let r = pf_core::pallet_plan(&project, &req).map_err(|e| e.to_string())?;
+            let p = &r.plan;
+            println!("pallet        {}", r.pallet_name);
+            println!(
+                "box outer     {:.0} × {:.0} × {:.0} mm (standing on its {})",
+                r.box_outer[0], r.box_outer[1], r.box_outer[2], p.standing_on
+            );
+            println!(
+                "pattern       {}{}",
+                p.pattern.label(),
+                if p.alternate {
+                    ", alternate layers mirrored"
+                } else {
+                    ""
+                }
+            );
+            println!("per layer     {}", p.per_layer);
+            println!("layers        {} (limited by {})", p.layers, p.limited_by);
+            println!("total         {} boxes", p.total);
+            println!("load height   {:.0} mm", p.load_height);
+            println!("area used     {:.0}%", p.area_efficiency * 100.0);
+            if let Some(w) = p.load_weight {
+                println!("load weight   {w:.0} kg");
+            }
+            if let Some(path) = report {
+                write_file(
+                    &path,
+                    &pf_core::pallet_report(&project, &req).map_err(|e| e.to_string())?,
+                )?;
+            }
+        }
+        Command::Case {
+            product,
+            count,
+            component,
+            board,
+            clearance,
+            upright,
+            pallet,
+            price,
+            top,
+        } => {
+            let dims: Vec<f64> = product
+                .to_ascii_lowercase()
+                .split('x')
+                .map(|v| v.trim().parse::<f64>())
+                .collect::<Result<_, _>>()
+                .map_err(|_| format!("product must look like 100x80x60, got '{product}'"))?;
+            let [a, b, c] = dims[..] else {
+                return Err(format!(
+                    "product must have three dimensions, got '{product}'"
+                ));
+            };
+            let req = pf_core::CaseRequest {
+                product: [a, b, c],
+                count,
+                component_id: component,
+                board: BoardRef::Preset(board),
+                clearance,
+                allow_rotation: !upright,
+                max_results: top,
+                pallet: pallet.map(|p| pf_core::PalletRequest {
+                    pallet: pf_core::PalletChoice::Preset(p),
+                    ..pf_core::PalletRequest::default()
+                }),
+                board_price_per_m2: price,
+            };
+            let list = pf_core::case_optimize(&req).map_err(|e| e.to_string())?;
+            println!(
+                "{:<3} {:<10} {:<22} {:>10} {:>12} {:>10} {:>12}",
+                "#",
+                "layout",
+                "inside L × W × H mm",
+                "board m²",
+                "m²/product",
+                "cost",
+                "per pallet"
+            );
+            for (i, k) in list.iter().enumerate() {
+                println!(
+                    "{:<3} {:<10} {:<22} {:>10.3} {:>12.4} {:>10} {:>12}",
+                    i + 1,
+                    format!(
+                        "{}×{}×{}",
+                        k.arrangement[0], k.arrangement[1], k.arrangement[2]
+                    ),
+                    format!(
+                        "{:.0} × {:.0} × {:.0}",
+                        k.inside[0], k.inside[1], k.inside[2]
+                    ),
+                    k.blank_area_m2,
+                    k.board_m2_per_product,
+                    k.board_cost_per_case
+                        .map(|c| format!("{c:.3}"))
+                        .unwrap_or_else(|| "-".into()),
+                    k.products_per_pallet
+                        .map(|p| p.to_string())
+                        .unwrap_or_else(|| "-".into()),
+                );
+            }
         }
         Command::Nest {
             design,

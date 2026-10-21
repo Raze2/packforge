@@ -7,8 +7,12 @@ import type {
   ComponentInfo,
   ComponentSummary,
   ExportFormat,
+  CaseCandidate,
+  CaseRequest,
   ExportOptions,
   Folded,
+  PalletRequest,
+  PalletResult,
   Nesting,
   NestSummary,
   Project,
@@ -64,6 +68,17 @@ export const core = {
   render: (project: Project): RenderResult => call(() => wasm.render(JSON.stringify(project))),
   fold: (project: Project, progress: number): Folded =>
     call(() => wasm.fold(JSON.stringify(project), progress)),
+  palletPlan: (project: Project, req: PalletRequest): PalletResult =>
+    call(() => wasm.palletPlan(JSON.stringify(project), JSON.stringify(req))),
+  palletReport(project: Project, req: PalletRequest): Uint8Array {
+    try {
+      return wasm.palletReport(JSON.stringify(project), JSON.stringify(req));
+    } catch (e) {
+      throw toCoreError(e);
+    }
+  },
+  caseOptimize: (req: CaseRequest): CaseCandidate[] =>
+    call(() => wasm.caseOptimize(JSON.stringify(req))),
   nest: (project: Project, nesting: Nesting): NestSummary =>
     call(() => wasm.nest(JSON.stringify(project), JSON.stringify(nesting))),
   exportFile(project: Project, format: ExportFormat, options?: ExportOptions): Uint8Array {

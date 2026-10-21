@@ -82,10 +82,18 @@ JSON in/out unless a file is returned. `/v1/health` and `/v1/openapi.json` are p
 | POST | `/export` | `{project, format, options?}` | file bytes with `Content-Disposition` and a strong `ETag` (`If-None-Match` → 304) |
 | POST | `/nest` | `{project, nesting}` | blanks per sheet, grid, rotation, sheet utilisation |
 | POST | `/fold` | `{project, progress?}` | 3D panel corners (mm) and normals; `progress` 0 = flat, 1 = erected |
-| POST | `/pallet`, `/case-optimize` | | *planned (Stage 8)* |
+| POST | `/pallet` | `{project, pallet?}` | pallet plan: pattern, per layer, layers, total, efficiencies, box positions of one layer |
+| POST | `/pallet/report` | `{project, pallet?}` | A4 PDF: layer top view, stack side view, figures |
+| POST | `/case-optimize` | `{product, count, component_id?, board?, clearance?, allow_rotation?, max_results?, pallet?, board_price_per_m2?}` | case sizes ranked by board per product (or by products per pallet when `pallet` is set) |
 
 **Formats:** `svg`, `dxf` (layers per line type), `pdf` (1:1 or fitted, title block, legend),
 `cf2` (die-makers, cutting tables), `hpgl` (`.plt`, plotters), `glb` (3D model of the erected box).
+
+**Pallet request** (`pallet`, all optional): `pallet` (`eur` default, `eur-half`,
+`iso-1200x1000`, `gma`, `asia`, or `{length, width, height}`), `max_height` (incl. pallet,
+default 1800), `box_weight`, `max_weight` (kg), `overhang`, `allow_on_side`, `box_outer`
+(`[L, W, H]` measured; default inside + 2 × caliper). Layer patterns: block, two-block, pinwheel;
+alternate layers are mirrored when the pattern is not a block.
 
 **Export options** (all optional):
 
@@ -194,6 +202,9 @@ $design->cf2(['rotate' => 90, 'profile' => 'cut-crease']);         // cutting ta
 $design->plt(['nesting' => ['sheet_width' => 2400, 'sheet_height' => 1600]]);
 $design->glb();                                                    // 3D model
 $design->nest(['sheet_width' => 2400, 'sheet_height' => 1600]);    // ['count' => 8, ...]
+$design->pallet(['pallet' => 'eur', 'box_weight' => 8]);          // ['plan' => ['total' => 70, ...]]
+$design->palletReport();                                           // A4 PDF
+PackForge::caseOptimize([100, 80, 60], 12, ['pallet' => ['pallet' => 'eur']]);
 ```
 
 Package contents: `Client` + facade, immutable `Design` builder, `RenderResult`/`Stats`/
@@ -214,6 +225,8 @@ pf export fefco-0201 -f pdf --page a4 --sheet 2400x1600 --watermark "Proof"
 pf export fefco-0201 -f cf2 --rotate 90 --profile cut-crease
 pf nest fefco-0201 --sheet 2400x1600 --gap 8 --margin 10
 pf fold fefco-0201 --progress 0.5                                   # 3D panels as JSON
+pf pallet fefco-0201 -p L=342 -p W=242 -p H=200 --box-weight 8 --report pallet.pdf
+pf case 100x80x60 12 --pallet eur --price 0.65                      # case sizes for 12 products
 pf batch orders.csv --format pdf --out ./exports                     # planned (Stage 3)
 ```
 
